@@ -186,19 +186,16 @@ Contract Address: ${formData.contractAddress}`,
 function updateCoinList() {
     coinList.innerHTML = coins.map(coin => `
         <div class="coin-card">
-            <img src="${coin.image || 'default-coin-image.png'}" alt="${coin.name}" class="coin-image">
-            <div class="coin-info">
-                <div class="coin-header">
-                    <h3 class="coin-name">${coin.name}</h3>
-                </div>
-                <p class="contract-address">${coin.contractAddress}</p>
-                <p class="description">${coin.description || ''}</p>
-                <div class="vote-stats">
-                    <button class="hammer-btn" onclick="vote(${coin.id})">
-                        🔨 HAMMER! (<span class="votes">${coin.votes.toLocaleString()}</span>)
-                    </button>
-                </div>
+            <div class="coin-name">${coin.name}</div>
+            <div class="coin-address">${coin.contractAddress}</div>
+            <div class="votes-count">
+                🔥 ${coin.votes || 0} total votes
+                <br>
+                <span style="font-size: 0.9em; color: var(--accent)">
+                    (${coin.recentVotes || 0} in last minute)
+                </span>
             </div>
+            <button onclick="vote(${coin.id})" class="vote-btn">VOTE</button>
         </div>
     `).join('');
 }
@@ -223,16 +220,20 @@ async function vote(coinId) {
             coins[coinIndex] = updatedCoin;
         }
 
-        trackClick(coinId);
-        
-        // Visual feedback
+        // Get the clicked button's position for the confetti effect
         const btn = document.querySelector(`button[onclick="vote(${coinId})"]`);
-        if (btn) {
-            btn.style.transform = 'scale(0.95)';
-            setTimeout(() => {
-                btn.style.transform = 'scale(1)';
-            }, 50);
-        }
+        const rect = btn.getBoundingClientRect();
+        createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+
+        // Add winning animation to the coin card
+        const card = btn.closest('.coin-card');
+        card.classList.add('win-animation');
+        setTimeout(() => card.classList.remove('win-animation'), 500);
+
+        // Play a satisfying sound
+        const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAABQAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAABSAJAaWQAAAAAAAAAAAAAAAAAAAAP/jOMAAAAAAAAAAAABJbmZvAAAADwAAAAMAAABmAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf///////////////////////////////////////////////////////////////////////////wAAAABMYXZjNTguMTMAAAAAAAAAAAAAAAAkAAAAAAAAAAAAFIAkBpZEAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+        audio.volume = 0.2;
+        audio.play();
         
         updateCoinList();
         updateLeaderboards();
@@ -245,43 +246,32 @@ async function vote(coinId) {
 // Update leaderboards
 function updateLeaderboards() {
     // Last minute trending
-    const trendingCoins = coins.map(coin => ({
-        ...coin,
-        clicksPerMinute: calculateClicksPerMinute(coin.id)
-    }))
-    .sort((a, b) => b.clicksPerMinute - a.clicksPerMinute)
-    .slice(0, 5); // Top 5 coins
+    const recentVotes = [...coins]
+        .sort((a, b) => (b.recentVotes || 0) - (a.recentVotes || 0))
+        .slice(0, 5);
 
-    leaderboardList.innerHTML = trendingCoins.map((coin, index) => `
+    leaderboardList.innerHTML = recentVotes.map((coin, index) => `
         <div class="leaderboard-entry">
-            <div class="rank">#${index + 1}</div>
-            <div class="coin-info-compact">
-                <div class="coin-name-compact">${coin.name}</div>
-                <div class="contract-address">${coin.contractAddress}</div>
+            <div>
+                <span style="color: var(--gold)">#${index + 1}</span>
+                <span style="color: var(--money-green)">${coin.name}</span>
             </div>
-            <div class="click-stats">
-                <div class="clicks-per-minute">${coin.clicksPerMinute}</div>
-                <div class="trend-indicator">clicks/min</div>
-            </div>
+            <div>🔥 ${coin.recentVotes || 0} votes/min</div>
         </div>
     `).join('');
 
     // Total clicks leaderboard
-    const topTotalClicks = [...coins]
-        .sort((a, b) => b.votes - a.votes)
-        .slice(0, 5); // Top 5 coins
+    const topTotal = [...coins]
+        .sort((a, b) => (b.votes || 0) - (a.votes || 0))
+        .slice(0, 5);
 
-    totalClicksList.innerHTML = topTotalClicks.map((coin, index) => `
+    totalClicksList.innerHTML = topTotal.map((coin, index) => `
         <div class="leaderboard-entry">
-            <div class="rank">#${index + 1}</div>
-            <div class="coin-info-compact">
-                <div class="coin-name-compact">${coin.name}</div>
-                <div class="contract-address">${coin.contractAddress}</div>
+            <div>
+                <span style="color: var(--gold)">#${index + 1}</span>
+                <span style="color: var(--money-green)">${coin.name}</span>
             </div>
-            <div class="click-stats">
-                <div class="clicks-per-minute">${coin.votes.toLocaleString()}</div>
-                <div class="trend-indicator">total clicks</div>
-            </div>
+            <div>💰 ${coin.votes || 0} total</div>
         </div>
     `).join('');
 }
@@ -302,4 +292,45 @@ periodBtns.forEach(btn => {
 setInterval(updateLeaderboards, 1000);
 
 // Load coins when page loads
-loadCoins(); 
+loadCoins();
+
+// Add confetti effect for voting
+function createConfetti(x, y) {
+    const colors = ['#00ff66', '#ffd700', '#ff3e3e'];
+    for (let i = 0; i < 30; i++) {
+        const confetti = document.createElement('div');
+        confetti.style.position = 'fixed';
+        confetti.style.left = x + 'px';
+        confetti.style.top = y + 'px';
+        confetti.style.width = '10px';
+        confetti.style.height = '10px';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.borderRadius = '50%';
+        confetti.style.pointerEvents = 'none';
+        document.body.appendChild(confetti);
+
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = 5 + Math.random() * 5;
+        const vx = Math.cos(angle) * velocity;
+        const vy = Math.sin(angle) * velocity;
+
+        let posX = x;
+        let posY = y;
+
+        const animate = () => {
+            posX += vx;
+            posY += vy - 0.5; // Add gravity effect
+            confetti.style.left = posX + 'px';
+            confetti.style.top = posY + 'px';
+            confetti.style.opacity = parseFloat(confetti.style.opacity || 1) - 0.02;
+
+            if (parseFloat(confetti.style.opacity) > 0) {
+                requestAnimationFrame(animate);
+            } else {
+                confetti.remove();
+            }
+        };
+
+        requestAnimationFrame(animate);
+    }
+} 

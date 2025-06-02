@@ -28,6 +28,12 @@ function writeCoins(coins) {
     fs.writeFileSync(COINS_FILE, JSON.stringify(coins, null, 2));
 }
 
+// Calculate recent votes (within last minute)
+function calculateRecentVotes(timestamps) {
+    const oneMinuteAgo = Date.now() - 60000;
+    return timestamps.filter(time => time > oneMinuteAgo).length;
+}
+
 app.use(express.static('.'));
 app.use(express.json());
 
@@ -42,6 +48,11 @@ app.use((req, res, next) => {
 // Get all coins
 app.get('/api/coins', (req, res) => {
     const coins = readCoins();
+    // Calculate recent votes for each coin
+    coins.forEach(coin => {
+        if (!coin.voteTimestamps) coin.voteTimestamps = [];
+        coin.recentVotes = calculateRecentVotes(coin.voteTimestamps);
+    });
     res.json(coins);
 });
 
@@ -53,7 +64,8 @@ app.post('/api/coins', (req, res) => {
         const newCoin = {
             ...req.body,
             id: Date.now(),
-            votes: 0
+            votes: 0,
+            voteTimestamps: []
         };
         console.log('Created new coin object:', newCoin);
         coins.push(newCoin);
@@ -64,6 +76,36 @@ app.post('/api/coins', (req, res) => {
         console.error('Error adding coin:', error);
         res.status(500).json({ error: error.message });
     }
+});
+
+// Update votes
+app.put('/api/coins/:id/vote', (req, res) => {
+    const coins = readCoins();
+    const coinId = parseInt(req.params.id);
+    const coin = coins.find(c => c.id === coinId);
+    
+    if (!coin) {
+        return res.status(404).json({ error: 'Coin not found' });
+    }
+
+    // Initialize vote timestamps if not exists
+    if (!coin.voteTimestamps) {
+        coin.voteTimestamps = [];
+    }
+
+    // Add new vote
+    coin.votes = (coin.votes || 0) + 1;
+    coin.voteTimestamps.push(Date.now());
+
+    // Calculate recent votes
+    coin.recentVotes = calculateRecentVotes(coin.voteTimestamps);
+
+    // Clean up old timestamps (keep only last hour to prevent array from growing too large)
+    const oneHourAgo = Date.now() - (60 * 60 * 1000);
+    coin.voteTimestamps = coin.voteTimestamps.filter(time => time > oneHourAgo);
+
+    writeCoins(coins);
+    res.json(coin);
 });
 
 // Update coin
@@ -100,21 +142,6 @@ app.delete('/api/coins/:id', (req, res) => {
     coins.splice(coinIndex, 1);
     writeCoins(coins);
     res.json({ message: 'Coin deleted successfully' });
-});
-
-// Update votes
-app.put('/api/coins/:id/vote', (req, res) => {
-    const coins = readCoins();
-    const coinId = parseInt(req.params.id);
-    const coin = coins.find(c => c.id === coinId);
-    
-    if (!coin) {
-        return res.status(404).json({ error: 'Coin not found' });
-    }
-
-    coin.votes = (coin.votes || 0) + 1;
-    writeCoins(coins);
-    res.json(coin);
 });
 
 app.post('/create-payment-intent', async (req, res) => {
