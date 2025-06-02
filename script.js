@@ -8,6 +8,11 @@ const leaderboardList = document.getElementById('leaderboardList');
 const totalClicksList = document.getElementById('totalClicksList');
 const periodBtns = document.querySelectorAll('.period-btn');
 
+// Initialize Stripe
+const stripe = Stripe('pk_test_51RVfG92XAflmugNSsC9892GoRZr004DsntU4TBah6dDAylznyLlSdHZ5rLW7ZWy8cpCbAx2udzCoTkKhulMzPkFj00uj3IjRxp');
+const elements = stripe.elements();
+const card = elements.create('card');
+
 // Load coins from localStorage
 let coins = JSON.parse(localStorage.getItem('coins')) || [];
 
@@ -45,56 +50,117 @@ function calculateClicksPerMinute(coinId) {
     return recentClicks.length;
 }
 
-// Show/Hide Modal
+// Mount card when modal opens
 addCoinBtn.addEventListener('click', () => {
     addCoinModal.classList.add('active');
+    // Mount the card element if it's not already mounted
+    setTimeout(() => {
+        card.mount('#card-element');
+    }, 100);
 });
 
 closeBtn.addEventListener('click', () => {
     addCoinModal.classList.remove('active');
+    card.unmount();
 });
 
 // Close modal when clicking outside
 window.addEventListener('click', (e) => {
     if (e.target === addCoinModal) {
         addCoinModal.classList.remove('active');
+        card.unmount();
     }
 });
 
 // Handle form submission
-document.getElementById('addCoinForm').addEventListener('submit', async (e) => {
+addCoinForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // Get form data
-    const formData = {
-        coinName: document.getElementById('coinName').value,
-        contractAddress: document.getElementById('contractAddress').value
-    };
+    const submitButton = addCoinForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.textContent = 'Processing...';
     
     try {
-        // Send email using EmailJS
-        const response = await emailjs.send(
-            "service_yr1se2k",
-            "template_h7svgsi",
-            {
+        // Get form data
+        const formData = {
+            coinName: document.getElementById('coinName').value,
+            contractAddress: document.getElementById('contractAddress').value
+        };
+
+        console.log('Creating payment intent...');
+        // Create a payment intent
+        const response = await fetch('http://localhost:3000/create-payment-intent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(responseData.error || 'Failed to create payment');
+        }
+
+        console.log('Confirming card payment...');
+        // Handle payment
+        const { error, paymentIntent } = await stripe.confirmCardPayment(responseData.clientSecret, {
+            payment_method: {
+                card: card,
+            }
+        });
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+            console.log('Payment successful, sending email...');
+            // Payment successful, now send email
+            const templateParams = {
                 from_name: formData.coinName,
                 to_name: "Admin",
                 message: `
 Coin Name: ${formData.coinName}
 Contract Address: ${formData.contractAddress}`,
                 reply_to: "wenmarketing2025@gmail.com"
-            }
-        );
-        
-        // Show success message
-        alert('Thank you! Your coin submission has been sent for review. Once approved, it will appear on the site.');
-        
-        // Reset form and close modal
-        document.getElementById('addCoinForm').reset();
-        addCoinModal.classList.remove('active');
+            };
+
+            await emailjs.send(
+                "service_yr1se2k",
+                "template_h7svgsi",
+                templateParams
+            );
+            
+            console.log('Email sent, updating UI...');
+            // Add coin to list and update display
+            const coin = { 
+                name: formData.coinName, 
+                contractAddress: formData.contractAddress, 
+                clicks: 0,
+                votes: 0,
+                id: Date.now()
+            };
+            coins.push(coin);
+            localStorage.setItem('coins', JSON.stringify(coins));
+            
+            // Close modal and reset form
+            addCoinModal.classList.remove('active');
+            addCoinForm.reset();
+            card.unmount();
+            
+            alert('Payment successful and coin added!');
+            
+            // Update displays
+            updateCoinList();
+            updateLeaderboards();
+        }
     } catch (error) {
-        console.error("Email sending failed:", error);
-        alert('There was an error submitting your coin. Please try again.');
+        console.error('Error:', error);
+        alert('Error: ' + error.message);
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Submit Payment & Add Coin';
     }
 });
 

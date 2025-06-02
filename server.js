@@ -1,58 +1,34 @@
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
+require('dotenv').config();
+const express = require('express');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const app = express();
 
-const server = http.createServer((req, res) => {
-    console.log(`Received request for: ${req.url}`);
-    
-    let filePath = '.' + req.url;
-    if (filePath === './') {
-        filePath = './index.html';
-    }
+app.use(express.static('.'));
+app.use(express.json());
 
-    console.log(`Attempting to serve: ${filePath}`);
-
-    const extname = path.extname(filePath);
-    let contentType = 'text/html';
-    
-    switch (extname) {
-        case '.js':
-            contentType = 'text/javascript';
-            break;
-        case '.css':
-            contentType = 'text/css';
-            break;
-    }
-
-    fs.readFile(filePath, (error, content) => {
-        if (error) {
-            console.error(`Error reading file ${filePath}:`, error);
-            
-            if(error.code === 'ENOENT') {
-                res.writeHead(404);
-                res.end(`File not found: ${filePath}`);
-            } else {
-                res.writeHead(500);
-                res.end(`Server error: ${error.code}`);
-            }
-        } else {
-            console.log(`Successfully serving ${filePath}`);
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content, 'utf-8');
-        }
-    });
+// Enable CORS
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    next();
 });
 
-const port = 3000;
-server.listen(port, 'localhost', () => {
-    console.log(`Server running at http://localhost:${port}/`);
-    console.log('Current directory:', process.cwd());
-    console.log('Files in directory:');
-    fs.readdir('.', (err, files) => {
-        if (err) {
-            console.error('Error reading directory:', err);
-        } else {
-            files.forEach(file => console.log('- ' + file));
-        }
-    });
+app.post('/create-payment-intent', async (req, res) => {
+    try {
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: 10000, // $100.00
+            currency: 'usd'
+        });
+
+        res.send({
+            clientSecret: paymentIntent.client_secret
+        });
+    } catch (error) {
+        res.status(500).send({ error: error.message });
+    }
+});
+
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
 }); 

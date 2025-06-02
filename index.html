@@ -5,24 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Work For Your Bags - Coin Voting Platform</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://js.stripe.com/v3/"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <script type="text/javascript">
         (function() {
-            try {
-                emailjs.init("yBNKkbPiCvqhUb22L");
-                console.log("EmailJS initialized successfully");
-                // Test if EmailJS is properly loaded
-                console.log("EmailJS object:", emailjs);
-            } catch (error) {
-                console.error("EmailJS initialization failed:", error);
-            }
+            emailjs.init("yBNKkbPiCvqhUb22L");
         })();
     </script>
     <style>
+        .payment-form {
+            padding: 20px;
+            margin-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        #card-element {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
         .primary-btn:hover {
             background: #2980b9;
         }
-
         .admin-btn {
             position: fixed;
             bottom: 2rem;
@@ -38,7 +42,6 @@
             transition: background 0.3s;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
         .admin-btn:hover {
             background: #d35400;
         }
@@ -72,12 +75,15 @@
     <!-- Add Coin Modal -->
     <div id="addCoinModal" class="modal">
         <div class="modal-content">
-            <h2>Add Your Coin</h2>
+            <h2>Add Your Coin ($100)</h2>
             <form id="addCoinForm">
                 <input type="text" id="coinName" placeholder="Coin Name" required>
                 <input type="text" id="contractAddress" placeholder="Contract Address" required>
+                <div class="payment-form">
+                    <div id="card-element"></div>
+                </div>
                 <div class="payment-info">
-                    <button type="submit" class="primary-btn">Submit</button>
+                    <button type="submit" class="primary-btn">Submit Payment & Add Coin</button>
                 </div>
             </form>
             <button class="close-btn">&times;</button>
