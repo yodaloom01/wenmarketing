@@ -7,11 +7,14 @@ const coinList = document.getElementById('coinList');
 const leaderboardList = document.getElementById('leaderboardList');
 const periodBtns = document.querySelectorAll('.period-btn');
 
-// Sample data structure (replace with backend storage later)
-let coins = [];
+// Load coins from localStorage
+let coins = JSON.parse(localStorage.getItem('coins')) || [];
 
 // Click tracking
 const clickHistory = new Map(); // Map of coinId to array of click timestamps
+
+// Initialize click history for all coins
+coins.forEach(coin => initClickHistory(coin.id));
 
 // Initialize click history for a coin
 function initClickHistory(coinId) {
@@ -58,51 +61,87 @@ window.addEventListener('click', (e) => {
 });
 
 // Handle form submission
-addCoinForm.addEventListener('submit', async (e) => {
+document.getElementById('addCoinForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    // Simulate payment processing
-    const paymentSuccess = await processPayment();
     
-    if (paymentSuccess) {
-        const formData = new FormData(addCoinForm);
-        const coinData = {
-            id: Date.now(),
-            name: formData.get('coinName'),
-            contractAddress: formData.get('contractAddress'),
-            description: formData.get('description'),
-            image: await getImageDataUrl(formData.get('coinImage')),
-            votes: 0,
-            timestamp: Date.now()
-        };
+    // Get form data
+    const formData = {
+        coinName: document.getElementById('coinName').value,
+        contractAddress: document.getElementById('contractAddress').value,
+        description: document.getElementById('description').value
+    };
 
-        coins.push(coinData);
-        initClickHistory(coinData.id);
-        updateCoinList();
-        updateLeaderboard();
-        addCoinForm.reset();
-        addCoinModal.classList.remove('active');
+    // Get image file
+    const imageFile = document.getElementById('coinImage').files[0];
+    const reader = new FileReader();
+    
+    reader.onload = async function(e) {
+        // Resize image before sending
+        const img = new Image();
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            
+            // Calculate new dimensions to keep aspect ratio
+            if (width > height) {
+                if (width > 800) {
+                    height *= 800 / width;
+                    width = 800;
+                }
+            } else {
+                if (height > 800) {
+                    width *= 800 / height;
+                    height = 800;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Get resized image as data URL with reduced quality
+            const resizedImageUrl = canvas.toDataURL('image/jpeg', 0.7);
+            
+            try {
+                console.log("Attempting to send email with data:", formData);
+
+                // Send email using EmailJS
+                const response = await emailjs.send(
+                    "service_yr1se2k",
+                    "template_h7svgsi",
+                    {
+                        from_name: formData.coinName,
+                        to_name: "Admin",
+                        message: `
+Coin Name: ${formData.coinName}
+Contract Address: ${formData.contractAddress}
+Description: ${formData.description}`,
+                        reply_to: "wenmarketing2025@gmail.com",
+                        image_url: resizedImageUrl
+                    }
+                );
+                
+                console.log("Email sent successfully", response);
+                // Show success message
+                alert('Thank you! Your coin submission has been sent for review. Once approved, it will appear on the site.');
+                
+                // Reset form and close modal
+                document.getElementById('addCoinForm').reset();
+                addCoinModal.classList.remove('active');
+            } catch (error) {
+                console.error("Email sending failed:", error);
+                alert('There was an error submitting your coin. Please try again.');
+            }
+        };
+        img.src = e.target.result;
+    };
+
+    if (imageFile) {
+        reader.readAsDataURL(imageFile);
     }
 });
-
-// Simulate payment processing (replace with real payment gateway)
-async function processPayment() {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            alert('Payment successful! Your coin has been listed.');
-            resolve(true);
-        }, 1000);
-    });
-}
-
-// Convert image file to data URL
-function getImageDataUrl(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-    });
-}
 
 // Update coin list display
 function updateCoinList() {
@@ -129,6 +168,9 @@ function vote(coinId) {
     if (coin) {
         coin.votes++;
         trackClick(coinId);
+        
+        // Save updated votes to localStorage
+        localStorage.setItem('coins', JSON.stringify(coins));
         
         // Visual feedback
         const btn = document.querySelector(`button[onclick="vote(${coinId})"]`);
@@ -184,18 +226,6 @@ periodBtns.forEach(btn => {
     });
 });
 
-// Initialize with sample data (optional)
-const sampleCoin = {
-    id: 1,
-    name: "Sample Coin",
-    contractAddress: "0x1234...5678",
-    description: "Click the hammer as fast as you can! Each click = 1 vote! 🚀",
-    image: "https://via.placeholder.com/300",
-    votes: 0,
-    timestamp: Date.now()
-};
-
-coins.push(sampleCoin);
-initClickHistory(sampleCoin.id);
+// Initialize the display
 updateCoinList();
 updateLeaderboard(); 
