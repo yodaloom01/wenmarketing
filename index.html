@@ -53,16 +53,13 @@
     <main>
         <div class="trending-section">
             <div class="leaderboard">
-                <h2>🔥 Trending Now</h2>
-                <div class="leaderboard-stats">
-                    <div class="stat-period">
-                        <button class="period-btn active" data-period="1">Last minute</button>
-                        <button class="period-btn" data-period="5">5 minutes</button>
-                        <button class="period-btn" data-period="15">15 minutes</button>
-                    </div>
-                    <div id="leaderboardList">
-                        <!-- Leaderboard entries will be inserted here -->
-                    </div>
+                <h2>🔥 Last Minute Trending</h2>
+                <div id="leaderboardList">
+                    <!-- Trending entries will be inserted here -->
+                </div>
+                <h2>📈 Top Total Clicks</h2>
+                <div id="totalClicksList">
+                    <!-- Total clicks leaderboard will be inserted here -->
                 </div>
             </div>
             <h2>All Coins</h2>
@@ -79,8 +76,6 @@
             <form id="addCoinForm">
                 <input type="text" id="coinName" placeholder="Coin Name" required>
                 <input type="text" id="contractAddress" placeholder="Contract Address" required>
-                <textarea id="description" placeholder="Description" required></textarea>
-                <input type="file" id="coinImage" accept="image/*" required>
                 <div class="payment-info">
                     <button type="submit" class="primary-btn">Submit</button>
                 </div>
