@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work For Your Bags - Coin Voting Platform</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>🔨 Work For Your Bags</h1>
+        <button id="addCoinBtn" class="primary-btn">Add Your Coin ($5)</button>
+    </header>
+
+    <main>
+        <div class="trending-section">
+            <h2>🔥 Trending Coins</h2>
+            <div id="coinList" class="coin-grid">
+                <!-- Coins will be dynamically inserted here -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Coin Modal -->
+    <div id="addCoinModal" class="modal">
+        <div class="modal-content">
+            <h2>Add Your Coin</h2>
+            <form id="addCoinForm">
+                <input type="text" id="coinName" placeholder="Coin Name" required>
+                <input type="text" id="contractAddress" placeholder="Contract Address" required>
+                <textarea id="description" placeholder="Description" required></textarea>
+                <input type="file" id="coinImage" accept="image/*" required>
+                <div class="payment-info">
+                    <p>One-time fee: $5</p>
+                    <button type="submit" class="primary-btn">Pay & Submit</button>
+                </div>
+            </form>
+            <button class="close-btn">&times;</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
