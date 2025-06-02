@@ -95,17 +95,29 @@
             align-items: center;
         }
 
-        .delete-btn {
-            background: #e74c3c;
+        .delete-btn, .edit-btn {
             color: white;
             border: none;
             padding: 0.5rem 1rem;
             border-radius: 5px;
             cursor: pointer;
+            margin-left: 0.5rem;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+        }
+
+        .edit-btn {
+            background: #3498db;
         }
 
         .delete-btn:hover {
             background: #c0392b;
+        }
+
+        .edit-btn:hover {
+            background: #2980b9;
         }
 
         .nav-btn {
@@ -226,6 +238,7 @@
         function showAdminPanel() {
             document.getElementById('loginForm').style.display = 'none';
             document.querySelector('.admin-panel').style.display = 'block';
+            loadCoins(); // Load coins when showing admin panel
         }
 
         // Add logout functionality
@@ -243,8 +256,20 @@
         logoutBtn.onclick = logout;
         document.querySelector('.admin-panel').appendChild(logoutBtn);
 
-        // Load coins from localStorage
-        let coins = JSON.parse(localStorage.getItem('coins')) || [];
+        let coins = [];
+        let editingCoinId = null;
+
+        // Load coins from server
+        async function loadCoins() {
+            try {
+                const response = await fetch('http://localhost:3000/api/coins');
+                coins = await response.json();
+                updateCoinList();
+            } catch (error) {
+                console.error('Error loading coins:', error);
+                alert('Error loading coins: ' + error.message);
+            }
+        }
 
         // Display existing coins
         function updateCoinList() {
@@ -255,51 +280,121 @@
                         <strong>${coin.name}</strong>
                         <div>${coin.contractAddress}</div>
                     </div>
-                    <button onclick="deleteCoin(${coin.id})" class="delete-btn">Delete</button>
+                    <div>
+                        <button onclick="editCoin(${coin.id})" class="edit-btn">Edit</button>
+                        <button onclick="deleteCoin(${coin.id})" class="delete-btn">Delete</button>
+                    </div>
                 </div>
             `).join('');
         }
 
+        // Edit coin
+        function editCoin(id) {
+            const coin = coins.find(c => c.id === id);
+            if (coin) {
+                editingCoinId = id;
+                document.getElementById('coinName').value = coin.name;
+                document.getElementById('contractAddress').value = coin.contractAddress;
+                document.getElementById('description').value = coin.description || '';
+                document.getElementById('imageUrl').value = coin.image || '';
+                document.querySelector('.submit-btn').textContent = 'Update Coin';
+            }
+        }
+
         // Handle form submission
-        document.getElementById('addCoinForm').addEventListener('submit', (e) => {
+        document.getElementById('addCoinForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const newCoin = {
-                id: Date.now(),
+            const formData = {
                 name: document.getElementById('coinName').value,
                 contractAddress: document.getElementById('contractAddress').value,
                 description: document.getElementById('description').value,
-                image: document.getElementById('imageUrl').value,
-                votes: 0,
-                timestamp: Date.now()
+                image: document.getElementById('imageUrl').value
             };
 
-            coins.push(newCoin);
-            localStorage.setItem('coins', JSON.stringify(coins));
+            try {
+                if (editingCoinId) {
+                    // Update existing coin
+                    const response = await fetch(`http://localhost:3000/api/coins/${editingCoinId}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
 
-            // Show success message
-            const successMessage = document.getElementById('successMessage');
-            successMessage.style.display = 'block';
-            setTimeout(() => {
-                successMessage.style.display = 'none';
-            }, 3000);
+                    if (!response.ok) {
+                        throw new Error('Failed to update coin');
+                    }
 
-            // Reset form
-            e.target.reset();
-            updateCoinList();
+                    // Reset editing state
+                    editingCoinId = null;
+                    document.querySelector('.submit-btn').textContent = 'Add Coin';
+                } else {
+                    // Add new coin
+                    const response = await fetch('http://localhost:3000/api/coins', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to add coin');
+                    }
+                }
+
+                // Show success message
+                const successMessage = document.getElementById('successMessage');
+                successMessage.textContent = editingCoinId ? 'Coin updated successfully!' : 'Coin added successfully!';
+                successMessage.style.display = 'block';
+                setTimeout(() => {
+                    successMessage.style.display = 'none';
+                }, 3000);
+
+                // Reset form and reload coins
+                e.target.reset();
+                await loadCoins();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
         });
 
         // Delete coin
-        function deleteCoin(id) {
+        async function deleteCoin(id) {
             if (confirm('Are you sure you want to delete this coin?')) {
-                coins = coins.filter(coin => coin.id !== id);
-                localStorage.setItem('coins', JSON.stringify(coins));
-                updateCoinList();
+                try {
+                    const response = await fetch(`http://localhost:3000/api/coins/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to delete coin');
+                    }
+
+                    await loadCoins(); // Reload the coins after deletion
+                } catch (error) {
+                    console.error('Error deleting coin:', error);
+                    alert('Error deleting coin: ' + error.message);
+                }
             }
         }
 
         // Initial coin list update
-        updateCoinList();
+        if (isAuthenticated === 'true') {
+            loadCoins().then(() => {
+                // Check if we have an edit parameter in the URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const editId = urlParams.get('edit');
+                if (editId) {
+                    editCoin(parseInt(editId));
+                    // Scroll to the form
+                    document.getElementById('addCoinForm').scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        }
     </script>
 </body>
 </html> 

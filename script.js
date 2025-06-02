@@ -17,7 +17,6 @@ const card = elements.create('card');
 const clickHistory = new Map(); // Map of coinId to array of click timestamps
 
 let coins = [];
-let editingCoinId = null;
 
 // Load coins from server
 async function loadCoins() {
@@ -60,21 +59,8 @@ function calculateClicksPerMinute(coinId) {
     return recentClicks.length;
 }
 
-// Edit coin
-function editCoin(coinId) {
-    const coin = coins.find(c => c.id === coinId);
-    if (coin) {
-        editingCoinId = coinId;
-        document.getElementById('coinName').value = coin.name;
-        document.getElementById('contractAddress').value = coin.contractAddress;
-        addCoinBtn.textContent = 'Edit Coin';
-        addCoinModal.classList.add('active');
-    }
-}
-
 // Mount card when modal opens
 addCoinBtn.addEventListener('click', () => {
-    editingCoinId = null; // Reset editing state
     addCoinBtn.textContent = 'Add New Coin';
     addCoinForm.reset();
     addCoinModal.classList.add('active');
@@ -87,7 +73,6 @@ addCoinBtn.addEventListener('click', () => {
 closeBtn.addEventListener('click', () => {
     addCoinModal.classList.remove('active');
     card.unmount();
-    editingCoinId = null;
     addCoinForm.reset();
 });
 
@@ -96,7 +81,6 @@ window.addEventListener('click', (e) => {
     if (e.target === addCoinModal) {
         addCoinModal.classList.remove('active');
         card.unmount();
-        editingCoinId = null;
         addCoinForm.reset();
     }
 });
@@ -116,97 +100,75 @@ addCoinForm.addEventListener('submit', async (e) => {
             contractAddress: document.getElementById('contractAddress').value
         };
 
-        if (editingCoinId) {
-            // Update existing coin
-            const response = await fetch(`http://localhost:3000/api/coins/${editingCoinId}`, {
-                method: 'PUT',
+        // Process payment for new coin
+        console.log('Creating payment intent...');
+        const response = await fetch('http://localhost:3000/create-payment-intent', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const responseData = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(responseData.error || 'Failed to create payment');
+        }
+
+        console.log('Confirming card payment...');
+        const { error, paymentIntent } = await stripe.confirmCardPayment(responseData.clientSecret, {
+            payment_method: {
+                card: card,
+            }
+        });
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+            console.log('Payment successful, sending email...');
+            // Payment successful, now send email
+            const templateParams = {
+                from_name: formData.name,
+                to_name: "Admin",
+                message: `
+Coin Name: ${formData.name}
+Contract Address: ${formData.contractAddress}`,
+                reply_to: "wenmarketing2025@gmail.com"
+            };
+
+            await emailjs.send(
+                "service_yr1se2k",
+                "template_h7svgsi",
+                templateParams
+            );
+            
+            console.log('Email sent, adding coin to server...');
+            // Add coin to server
+            const coinResponse = await fetch('http://localhost:3000/api/coins', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(formData)
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to update coin');
+            if (!coinResponse.ok) {
+                throw new Error('Failed to add coin to server');
             }
 
-            const updatedCoin = await response.json();
-            const index = coins.findIndex(c => c.id === editingCoinId);
-            if (index !== -1) {
-                coins[index] = updatedCoin;
-            }
-        } else {
-            // Process payment for new coin
-            console.log('Creating payment intent...');
-            const response = await fetch('http://localhost:3000/create-payment-intent', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            const responseData = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(responseData.error || 'Failed to create payment');
-            }
-
-            console.log('Confirming card payment...');
-            const { error, paymentIntent } = await stripe.confirmCardPayment(responseData.clientSecret, {
-                payment_method: {
-                    card: card,
-                }
-            });
-
-            if (error) {
-                throw new Error(error.message);
-            }
-
-            if (paymentIntent.status === 'succeeded') {
-                console.log('Payment successful, sending email...');
-                // Payment successful, now send email
-                const templateParams = {
-                    from_name: formData.name,
-                    to_name: "Admin",
-                    message: `
-Coin Name: ${formData.name}
-Contract Address: ${formData.contractAddress}`,
-                    reply_to: "wenmarketing2025@gmail.com"
-                };
-
-                await emailjs.send(
-                    "service_yr1se2k",
-                    "template_h7svgsi",
-                    templateParams
-                );
-                
-                console.log('Email sent, adding coin to server...');
-                // Add coin to server
-                const coinResponse = await fetch('http://localhost:3000/api/coins', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(formData)
-                });
-
-                if (!coinResponse.ok) {
-                    throw new Error('Failed to add coin to server');
-                }
-
-                const newCoin = await coinResponse.json();
-                coins.push(newCoin);
-                initClickHistory(newCoin.id);
-            }
+            const newCoin = await coinResponse.json();
+            coins.push(newCoin);
+            initClickHistory(newCoin.id);
         }
             
         // Close modal and reset form
         addCoinModal.classList.remove('active');
         addCoinForm.reset();
         card.unmount();
-        editingCoinId = null;
         
-        alert(editingCoinId ? 'Coin updated successfully!' : 'Payment successful and coin added!');
+        alert('Payment successful and coin added!');
         
         // Update displays
         updateCoinList();
@@ -216,7 +178,7 @@ Contract Address: ${formData.contractAddress}`,
         alert('Error: ' + error.message);
     } finally {
         submitButton.disabled = false;
-        submitButton.textContent = editingCoinId ? 'Update Coin' : 'Submit Payment & Add Coin';
+        submitButton.textContent = 'Submit Payment & Add Coin';
     }
 });
 
@@ -228,7 +190,6 @@ function updateCoinList() {
             <div class="coin-info">
                 <div class="coin-header">
                     <h3 class="coin-name">${coin.name}</h3>
-                    <button class="edit-btn" onclick="editCoin(${coin.id})">✏️ Edit</button>
                 </div>
                 <p class="contract-address">${coin.contractAddress}</p>
                 <p class="description">${coin.description || ''}</p>

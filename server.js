@@ -35,7 +35,7 @@ app.use(express.json());
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     next();
 });
 
@@ -84,6 +84,22 @@ app.put('/api/coins/:id', (req, res) => {
 
     writeCoins(coins);
     res.json(coins[coinIndex]);
+});
+
+// Delete coin
+app.delete('/api/coins/:id', (req, res) => {
+    console.log('Attempting to delete coin:', req.params.id);
+    const coins = readCoins();
+    const coinId = parseInt(req.params.id);
+    const coinIndex = coins.findIndex(c => c.id === coinId);
+    
+    if (coinIndex === -1) {
+        return res.status(404).json({ error: 'Coin not found' });
+    }
+
+    coins.splice(coinIndex, 1);
+    writeCoins(coins);
+    res.json({ message: 'Coin deleted successfully' });
 });
 
 // Update votes
