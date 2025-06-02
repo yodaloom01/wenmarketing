@@ -198,4 +198,106 @@ textarea {
     margin-top: 1rem;
     padding-top: 1rem;
     border-top: 1px solid #ddd;
+}
+
+.leaderboard {
+    background: #2c3e50;
+    padding: 1.5rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    color: white;
+}
+
+.leaderboard h2 {
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.leaderboard-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.stat-period {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.period-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    color: white;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.period-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.period-btn.active {
+    background: #3498db;
+}
+
+#leaderboardList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.leaderboard-entry {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 1rem;
+    border-radius: 5px;
+    transition: transform 0.3s;
+}
+
+.leaderboard-entry:hover {
+    transform: translateX(5px);
+}
+
+.rank {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #3498db;
+    min-width: 2rem;
+}
+
+.coin-info-compact {
+    flex: 1;
+}
+
+.coin-name-compact {
+    font-weight: bold;
+    margin-bottom: 0.2rem;
+}
+
+.click-stats {
+    text-align: right;
+}
+
+.clicks-per-minute {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #2ecc71;
+}
+
+.trend-indicator {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
+
+.trend-up {
+    color: #2ecc71;
+}
+
+.trend-down {
+    color: #e74c3c;
 } 

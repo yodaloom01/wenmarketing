@@ -14,7 +14,20 @@
 
     <main>
         <div class="trending-section">
-            <h2>🔥 Trending Coins</h2>
+            <div class="leaderboard">
+                <h2>🔥 Trending Now</h2>
+                <div class="leaderboard-stats">
+                    <div class="stat-period">
+                        <button class="period-btn active" data-period="1">Last minute</button>
+                        <button class="period-btn" data-period="5">5 minutes</button>
+                        <button class="period-btn" data-period="15">15 minutes</button>
+                    </div>
+                    <div id="leaderboardList">
+                        <!-- Leaderboard entries will be inserted here -->
+                    </div>
+                </div>
+            </div>
+            <h2>All Coins</h2>
             <div id="coinList" class="coin-grid">
                 <!-- Coins will be dynamically inserted here -->
             </div>

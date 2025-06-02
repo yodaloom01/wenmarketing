@@ -4,9 +4,42 @@ const addCoinModal = document.getElementById('addCoinModal');
 const closeBtn = document.querySelector('.close-btn');
 const addCoinForm = document.getElementById('addCoinForm');
 const coinList = document.getElementById('coinList');
+const leaderboardList = document.getElementById('leaderboardList');
+const periodBtns = document.querySelectorAll('.period-btn');
 
 // Sample data structure (replace with backend storage later)
 let coins = [];
+
+// Click tracking
+const clickHistory = new Map(); // Map of coinId to array of click timestamps
+
+// Initialize click history for a coin
+function initClickHistory(coinId) {
+    if (!clickHistory.has(coinId)) {
+        clickHistory.set(coinId, []);
+    }
+}
+
+// Add click to history
+function trackClick(coinId) {
+    initClickHistory(coinId);
+    const timestamps = clickHistory.get(coinId);
+    timestamps.push(Date.now());
+    
+    // Keep only last 15 minutes of clicks
+    const fifteenMinutesAgo = Date.now() - (15 * 60 * 1000);
+    while (timestamps.length > 0 && timestamps[0] < fifteenMinutesAgo) {
+        timestamps.shift();
+    }
+}
+
+// Calculate clicks per minute for a specific time period
+function calculateClicksPerMinute(coinId, minutes) {
+    const timestamps = clickHistory.get(coinId) || [];
+    const cutoff = Date.now() - (minutes * 60 * 1000);
+    const recentClicks = timestamps.filter(t => t >= cutoff);
+    return recentClicks.length / minutes;
+}
 
 // Show/Hide Modal
 addCoinBtn.addEventListener('click', () => {
@@ -44,7 +77,9 @@ addCoinForm.addEventListener('submit', async (e) => {
         };
 
         coins.push(coinData);
+        initClickHistory(coinData.id);
         updateCoinList();
+        updateLeaderboard();
         addCoinForm.reset();
         addCoinModal.classList.remove('active');
     }
@@ -52,7 +87,6 @@ addCoinForm.addEventListener('submit', async (e) => {
 
 // Simulate payment processing (replace with real payment gateway)
 async function processPayment() {
-    // Simulate payment API call
     return new Promise((resolve) => {
         setTimeout(() => {
             alert('Payment successful! Your coin has been listed.');
@@ -72,15 +106,7 @@ function getImageDataUrl(file) {
 
 // Update coin list display
 function updateCoinList() {
-    // Sort coins by votes (descending) and timestamp for tiebreaker
-    const sortedCoins = [...coins].sort((a, b) => {
-        if (b.votes === a.votes) {
-            return b.timestamp - a.timestamp;
-        }
-        return b.votes - a.votes;
-    });
-
-    coinList.innerHTML = sortedCoins.map(coin => `
+    coinList.innerHTML = coins.map(coin => `
         <div class="coin-card">
             <img src="${coin.image}" alt="${coin.name}" class="coin-image">
             <div class="coin-info">
@@ -97,11 +123,12 @@ function updateCoinList() {
     `).join('');
 }
 
-// Handle single click voting
+// Handle voting
 function vote(coinId) {
     const coin = coins.find(c => c.id === coinId);
     if (coin) {
         coin.votes++;
+        trackClick(coinId);
         
         // Visual feedback
         const btn = document.querySelector(`button[onclick="vote(${coinId})"]`);
@@ -113,8 +140,49 @@ function vote(coinId) {
         }
         
         updateCoinList();
+        updateLeaderboard();
     }
 }
+
+// Update leaderboard
+function updateLeaderboard() {
+    const activePeriod = document.querySelector('.period-btn.active').dataset.period;
+    const minutes = parseInt(activePeriod);
+    
+    // Calculate clicks per minute for each coin
+    const rankings = coins.map(coin => ({
+        ...coin,
+        clicksPerMinute: calculateClicksPerMinute(coin.id, minutes)
+    }))
+    .sort((a, b) => b.clicksPerMinute - a.clicksPerMinute)
+    .slice(0, 10); // Top 10 coins
+
+    leaderboardList.innerHTML = rankings.map((coin, index) => `
+        <div class="leaderboard-entry">
+            <div class="rank">#${index + 1}</div>
+            <div class="coin-info-compact">
+                <div class="coin-name-compact">${coin.name}</div>
+                <div class="contract-address">${coin.contractAddress}</div>
+            </div>
+            <div class="click-stats">
+                <div class="clicks-per-minute">${coin.clicksPerMinute.toFixed(1)}</div>
+                <div class="trend-indicator">clicks/min</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Handle period button clicks
+periodBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        // Update active state
+        periodBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update leaderboard
+        updateLeaderboard();
+    });
+});
 
 // Initialize with sample data (optional)
 const sampleCoin = {
@@ -128,4 +196,6 @@ const sampleCoin = {
 };
 
 coins.push(sampleCoin);
-updateCoinList(); 
+initClickHistory(sampleCoin.id);
+updateCoinList();
+updateLeaderboard(); 
