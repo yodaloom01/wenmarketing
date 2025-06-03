@@ -251,9 +251,7 @@
 
     <script>
         // Configuration
-        const API_URL = window.location.hostname === 'localhost' 
-            ? 'http://localhost:3000'
-            : 'https://wenmarketing.onrender.com';
+        const API_URL = 'https://wenmarketing.onrender.com';  // Always use Render backend
             
         // Set the admin password - you should change this to something secure
         const ADMIN_PASSWORD = "WenMoon2024!";
@@ -266,8 +264,8 @@
 
         function login() {
             const password = document.getElementById('adminPassword').value;
-            if (password === ADMIN_PASSWORD || localStorage.getItem('isAdmin') === 'true') {
-                localStorage.setItem('adminAuthenticated', 'true');
+            if (password === ADMIN_PASSWORD) {
+                localStorage.setItem('isAdmin', 'true');
                 showAdminPanel();
             } else {
                 document.getElementById('loginError').style.display = 'block';
@@ -281,38 +279,20 @@
             loadCoins(); // Load coins when showing admin panel
         }
 
-        // Add logout functionality
-        function logout() {
-            localStorage.removeItem('adminAuthenticated');
-            location.reload();
-        }
-
-        // Add a logout button to the admin panel
-        const logoutBtn = document.createElement('button');
-        logoutBtn.textContent = '🔓 Logout';
-        logoutBtn.className = 'submit-btn';
-        logoutBtn.style.marginTop = '20px';
-        logoutBtn.style.background = '#e74c3c';
-        logoutBtn.onclick = logout;
-        document.querySelector('.admin-panel').appendChild(logoutBtn);
-
-        let coins = [];
-        let editingCoinId = null;
-
         // Load coins from server
         async function loadCoins() {
             try {
                 const response = await fetch(`${API_URL}/api/coins`);
-                coins = await response.json();
-                updateCoinList();
+                const coins = await response.json();
+                updateCoinList(coins);
             } catch (error) {
                 console.error('Error loading coins:', error);
                 alert('Error loading coins: ' + error.message);
             }
         }
 
-        // Display existing coins
-        function updateCoinList() {
+        // Update coin list display
+        function updateCoinList(coins) {
             const coinList = document.getElementById('coinList');
             coinList.innerHTML = coins.map(coin => `
                 <div class="coin-entry">
@@ -328,61 +308,34 @@
             `).join('');
         }
 
-        // Edit coin
-        function editCoin(id) {
-            const coin = coins.find(c => c.id === id);
-            if (coin) {
-                editingCoinId = id;
-                document.getElementById('coinName').value = coin.name;
-                document.getElementById('contractAddress').value = coin.contractAddress;
-                document.getElementById('description').value = coin.description || '';
-                document.getElementById('imageUrl').value = coin.image || '';
-                document.querySelector('.submit-btn').textContent = 'Update Coin';
-            }
-        }
-
-        // Handle form submission
+        // Handle form submission for adding/editing coins
         document.getElementById('addCoinForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-
+            
             const formData = {
                 name: document.getElementById('coinName').value,
                 contractAddress: document.getElementById('contractAddress').value,
                 description: document.getElementById('description').value,
-                image: document.getElementById('imageUrl').value
+                image: document.getElementById('imageUrl').value,
+                isPaid: true // Admin-added coins are considered paid
             };
 
             try {
-                if (editingCoinId) {
-                    // Update existing coin
-                    const response = await fetch(`${API_URL}/api/coins/${editingCoinId}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formData)
-                    });
+                const method = editingCoinId ? 'PUT' : 'POST';
+                const url = editingCoinId 
+                    ? `${API_URL}/api/coins/${editingCoinId}`
+                    : `${API_URL}/api/coins`;
 
-                    if (!response.ok) {
-                        throw new Error('Failed to update coin');
-                    }
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
 
-                    // Reset editing state
-                    editingCoinId = null;
-                    document.querySelector('.submit-btn').textContent = 'Add Coin';
-                } else {
-                    // Add new coin
-                    const response = await fetch(`${API_URL}/api/coins`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(formData)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Failed to add coin');
-                    }
+                if (!response.ok) {
+                    throw new Error('Failed to save coin');
                 }
 
                 // Show success message
@@ -394,6 +347,8 @@
                 }, 3000);
 
                 // Reset form and reload coins
+                editingCoinId = null;
+                document.querySelector('.submit-btn').textContent = 'Add Coin';
                 e.target.reset();
                 await loadCoins();
             } catch (error) {
@@ -401,6 +356,27 @@
                 alert('Error: ' + error.message);
             }
         });
+
+        // Edit coin
+        let editingCoinId = null;
+        async function editCoin(id) {
+            try {
+                const response = await fetch(`${API_URL}/api/coins/${id}`);
+                const coin = await response.json();
+                
+                editingCoinId = id;
+                document.getElementById('coinName').value = coin.name;
+                document.getElementById('contractAddress').value = coin.contractAddress;
+                document.getElementById('description').value = coin.description || '';
+                document.getElementById('imageUrl').value = coin.image || '';
+                
+                document.querySelector('.submit-btn').textContent = 'Update Coin';
+                document.getElementById('coinName').focus();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error loading coin details: ' + error.message);
+            }
+        }
 
         // Delete coin
         async function deleteCoin(id) {
@@ -414,39 +390,18 @@
                         throw new Error('Failed to delete coin');
                     }
 
-                    await loadCoins(); // Reload the coins after deletion
+                    await loadCoins();
                 } catch (error) {
-                    console.error('Error deleting coin:', error);
+                    console.error('Error:', error);
                     alert('Error deleting coin: ' + error.message);
                 }
             }
         }
 
-        // Initial coin list update
-        if (isAuthenticated === 'true') {
-            loadCoins().then(() => {
-                // Check if we have an edit parameter in the URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const editId = urlParams.get('edit');
-                if (editId) {
-                    editCoin(parseInt(editId));
-                    // Scroll to the form
-                    document.getElementById('addCoinForm').scrollIntoView({ behavior: 'smooth' });
-                }
-            });
+        // Initial load
+        if (isAuthenticated) {
+            loadCoins();
         }
-
-        // Check admin status when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            const isAdmin = localStorage.getItem('isAdmin') === 'true';
-            if (isAdmin) {
-                showAdminPanel();
-            } else {
-                document.getElementById('loginForm').style.display = 'block';
-                document.getElementById('unauthorizedMessage').style.display = 'block';
-                document.querySelector('.admin-panel').style.display = 'none';
-            }
-        });
     </script>
 </body>
 </html> 
