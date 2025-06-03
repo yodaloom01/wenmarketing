@@ -243,7 +243,7 @@ function updateCoinList() {
     const legendaryCoins = coins.filter(coin => (coin.recentVotes || 0) >= 100);
     if (legendaryCoins.length > 0) {
         promoBanner.style.display = 'block';
-        promoBanner.innerHTML = `🏆 ${legendaryCoins.map(c => c.name).join(', ')} ${legendaryCoins.length === 1 ? 'has' : 'have'} reached LEGENDARY status with 100+ votes/min! 🏆`;
+        promoBanner.innerHTML = `💥 ${legendaryCoins.map(c => c.name).join(', ')} COMMUNITY IS RAIDING HARD! 💥`;
     } else {
         promoBanner.style.display = 'none';
     }
