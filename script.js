@@ -353,7 +353,8 @@ function updateLeaderboards() {
 
     leaderboardList.innerHTML = recentVotes.map((coin, index) => `
         <div class="leaderboard-entry">
-            <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                ${coin.image ? `<img src="${coin.image}" alt="${coin.name}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">` : ''}
                 <span style="color: var(--gold)">#${index + 1}</span>
                 <span style="color: var(--money-green)">${coin.name}</span>
             </div>
@@ -368,7 +369,8 @@ function updateLeaderboards() {
 
     totalClicksList.innerHTML = topTotal.map((coin, index) => `
         <div class="leaderboard-entry">
-            <div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+                ${coin.image ? `<img src="${coin.image}" alt="${coin.name}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover;">` : ''}
                 <span style="color: var(--gold)">#${index + 1}</span>
                 <span style="color: var(--money-green)">${coin.name}</span>
             </div>
