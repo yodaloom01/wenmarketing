@@ -668,4 +668,26 @@ input[type="text"]:focus {
 }
 
 /* Add casino font */
-@import url('https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap'); 
+@import url('https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap');
+
+.top-communities {
+    color: #ffd700 !important;
+    font-size: 2rem !important;
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.5) !important;
+    margin-top: 2rem !important;
+    padding-top: 2rem;
+    border-top: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.top-communities-list .leaderboard-entry {
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    transition: all 0.3s ease;
+}
+
+.top-communities-list .leaderboard-entry:hover {
+    transform: translateX(5px);
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.08));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+} 
