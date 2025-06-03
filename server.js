@@ -25,11 +25,11 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static('.'));
 
-const COINS_FILE = path.join(__dirname, 'data', 'coins.json');
+const COINS_FILE = path.join('/data', 'coins.json');
 
 // Ensure data directory exists
 async function ensureDataDir() {
-    const dataDir = path.join(__dirname, 'data');
+    const dataDir = path.join('/data');
     try {
         await fs.access(dataDir);
     } catch {
@@ -254,5 +254,11 @@ app.get('/health', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    initCoinsFile().catch(console.error);
+    // Ensure data directory exists on startup
+    ensureDataDir().then(() => {
+        console.log('Data directory ready');
+        initCoinsFile().catch(console.error);
+    }).catch(err => {
+        console.error('Failed to create data directory:', err);
+    });
 }); 
