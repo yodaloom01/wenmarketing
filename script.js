@@ -254,6 +254,25 @@ function updateCoinList() {
     }
 }
 
+// Animate number like a slot machine
+function animateNumber(element, start, end, duration = 1000) {
+    const range = end - start;
+    const increment = range / (duration / 16); // 60fps
+    let current = start;
+    
+    const updateNumber = () => {
+        current += increment;
+        if ((increment > 0 && current >= end) || (increment < 0 && current <= end)) {
+            element.innerHTML = `🔥 ${end} total votes<br><span style="font-size: 0.9em; color: var(--accent)">(${end} in last minute)</span>`;
+            return;
+        }
+        element.innerHTML = `🔥 ${Math.floor(current)} total votes<br><span style="font-size: 0.9em; color: var(--accent)">(${Math.floor(current)} in last minute)</span>`;
+        requestAnimationFrame(updateNumber);
+    };
+    
+    requestAnimationFrame(updateNumber);
+}
+
 // Handle voting
 async function vote(coinId) {
     try {
@@ -267,6 +286,9 @@ async function vote(coinId) {
 
         // Create coin rain effect
         createCoinRain(btn);
+
+        // Get current vote count before update
+        const currentVotes = coins.find(c => String(c.id) === String(coinId))?.votes || 0;
 
         // Original vote API call
         const response = await fetch(`${API_URL}/api/coins/${coinId}/vote`, {
@@ -284,6 +306,10 @@ async function vote(coinId) {
         const coinIndex = coins.findIndex(c => String(c.id) === String(coinId));
         if (coinIndex !== -1) {
             coins[coinIndex] = updatedCoin;
+            // Animate the vote count change
+            animateNumber(votesCount, currentVotes, updatedCoin.votes || 0, 800);
+            // Update leaderboards
+            updateLeaderboards();
         }
 
         // Remove animation classes after delay
