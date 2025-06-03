@@ -222,7 +222,7 @@ document.body.appendChild(promoBanner);
 // Update coin list display
 function updateCoinList() {
     coinList.innerHTML = coins.map(coin => {
-        const isLegendary = (coin.recentVotes || 0) >= 100;
+        const isLegendary = (coin.recentVotes || 0) >= 500;
         return `
             <div class="coin-card ${isLegendary ? 'legendary' : ''}">
                 <div class="coin-name">${coin.name}</div>
@@ -239,8 +239,8 @@ function updateCoinList() {
         `;
     }).join('');
 
-    // Check for any coins with 100+ votes/min
-    const legendaryCoins = coins.filter(coin => (coin.recentVotes || 0) >= 100);
+    // Check for any coins with 500+ votes/min
+    const legendaryCoins = coins.filter(coin => (coin.recentVotes || 0) >= 500);
     if (legendaryCoins.length > 0) {
         promoBanner.style.display = 'block';
         promoBanner.innerHTML = `💥 ${legendaryCoins.map(c => c.name).join(', ')} COMMUNITY IS RAIDING HARD! 💥`;
