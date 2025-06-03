@@ -233,7 +233,7 @@ async function vote(coinId) {
         setTimeout(() => card.classList.remove('win-animation'), 500);
 
         // Play a satisfying sound
-        const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAABQAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAABSAJAaWQAAAAAAAAAAAAAAAAAAAAP/jOMAAAAAAAAAAAABJbmZvAAAADwAAAAMAAABmAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf///////////////////////////////////////////////////////////////////////////wAAAABMYXZjNTguMTMAAAAAAAAAAAAAAAAkAAAAAAAAAAAAFIAkBpZEAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
+        const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAABQAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAABSAJAaWQAAAAAAAAAAAAAAAAAAAAP/jOMAAAAAAAAAAAABJbmZvAAAADwAAAAMAAABmAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf///////////////////////////////////////////////////////////////////////////wAAAABMYXZjNTguMTMAAAAAAAAAAAAAAAAkAAAAAAAAAAAAFIAkBpZEAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
         audio.volume = 0.2;
         audio.play();
         
@@ -352,4 +352,68 @@ searchInput.addEventListener('input', (e) => {
         );
     }
     updateCoinList();
+});
+
+// Admin authentication check
+function checkAdminStatus() {
+    // Check if admin token exists in localStorage
+    const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    const adminBtn = document.querySelector('.admin-btn');
+    
+    if (adminBtn) {
+        if (!isAdmin) {
+            adminBtn.style.display = 'none';
+            // Remove logout button if it exists
+            const logoutBtn = document.querySelector('.logout-btn');
+            if (logoutBtn) logoutBtn.remove();
+        } else {
+            adminBtn.style.display = 'block';
+            // Add logout button if it doesn't exist
+            if (!document.querySelector('.logout-btn')) {
+                const logoutBtn = document.createElement('button');
+                logoutBtn.className = 'logout-btn';
+                logoutBtn.style.cssText = `
+                    position: fixed;
+                    bottom: 2rem;
+                    right: 12rem;
+                    background: #e74c3c;
+                    color: white;
+                    border: none;
+                    padding: 1rem 2rem;
+                    border-radius: 5px;
+                    cursor: pointer;
+                    font-size: 1rem;
+                    transition: background 0.3s;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                `;
+                logoutBtn.textContent = '🔓 Logout';
+                logoutBtn.onclick = () => {
+                    localStorage.removeItem('isAdmin');
+                    localStorage.removeItem('adminAuthenticated');
+                    checkAdminStatus();
+                    alert('Logged out successfully');
+                };
+                document.body.appendChild(logoutBtn);
+            }
+        }
+    }
+}
+
+// Call checkAdminStatus when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    checkAdminStatus();
+    loadCoins();
+});
+
+// Add secret key combination to enable admin (Ctrl + Alt + A)
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.altKey && e.key === 'a') {
+        const password = prompt('Enter admin password:');
+        if (password === 'wenmarketing2025') {
+            localStorage.setItem('isAdmin', 'true');
+            checkAdminStatus(); // Immediately check and update admin status
+            alert('Admin mode activated');
+            location.reload(); // Refresh the page to show changes
+        }
+    }
 }); 

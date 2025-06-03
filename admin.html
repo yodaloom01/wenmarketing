@@ -163,6 +163,34 @@
             margin: 10px 0;
             display: none;
         }
+
+        .auth-container {
+            max-width: 400px;
+            margin: 100px auto;
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+
+        .unauthorized-message {
+            text-align: center;
+            color: #ff3e3e;
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #00ff88;
+            text-decoration: none;
+            margin-top: 20px;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -174,7 +202,7 @@
         <button onclick="login()" class="submit-btn">Login</button>
     </div>
 
-    <div class="admin-panel">
+    <div id="adminContent" class="admin-panel">
         <h1>🔨 Add New Coins</h1>
         
         <div id="successMessage" class="success-message">
@@ -213,6 +241,12 @@
         </div>
     </div>
 
+    <div id="unauthorizedMessage" class="auth-container">
+        <h1>⚠️ Unauthorized Access</h1>
+        <p class="unauthorized-message">You need to be logged in as an admin to view this page.</p>
+        <a href="index.html" class="back-link">← Back to Home</a>
+    </div>
+
     <a href="index.html" class="nav-btn">👈 Back to Main Site</a>
 
     <script>
@@ -220,14 +254,14 @@
         const ADMIN_PASSWORD = "WenMoon2024!";
         
         // Check if already authenticated
-        const isAuthenticated = localStorage.getItem('adminAuthenticated');
-        if (isAuthenticated === 'true') {
+        const isAuthenticated = localStorage.getItem('isAdmin') === 'true';
+        if (isAuthenticated) {
             showAdminPanel();
         }
 
         function login() {
             const password = document.getElementById('adminPassword').value;
-            if (password === ADMIN_PASSWORD) {
+            if (password === ADMIN_PASSWORD || localStorage.getItem('isAdmin') === 'true') {
                 localStorage.setItem('adminAuthenticated', 'true');
                 showAdminPanel();
             } else {
@@ -237,6 +271,7 @@
 
         function showAdminPanel() {
             document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('unauthorizedMessage').style.display = 'none';
             document.querySelector('.admin-panel').style.display = 'block';
             loadCoins(); // Load coins when showing admin panel
         }
@@ -395,6 +430,18 @@
                 }
             });
         }
+
+        // Check admin status when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+            if (isAdmin) {
+                showAdminPanel();
+            } else {
+                document.getElementById('loginForm').style.display = 'block';
+                document.getElementById('unauthorizedMessage').style.display = 'block';
+                document.querySelector('.admin-panel').style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html> 
