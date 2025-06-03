@@ -97,13 +97,13 @@ app.get('/api/coins', async (req, res) => {
 app.get('/api/coins/:id', async (req, res) => {
     try {
         const coins = await readCoins();
-        const id = parseInt(req.params.id);
+        const id = req.params.id;
         console.log('Fetching coin with ID:', id); // Debug log
         console.log('Available coins:', coins); // Debug log
-        const coin = coins.find(c => c.id === id);
+        const coin = coins.find(c => String(c.id) === String(id));
         if (!coin) {
-            console.log('Coin not found'); // Debug log
-            return res.status(404).json({ error: 'Coin not found' });
+            console.log('Coin not found for ID:', id); // Debug log
+            return res.status(404).json({ error: `Coin not found with ID: ${id}` });
         }
         console.log('Found coin:', coin); // Debug log
         res.json(coin);
@@ -155,12 +155,12 @@ app.put('/api/coins/:id/vote', async (req, res) => {
 app.put('/api/coins/:id', async (req, res) => {
     try {
         const coins = await readCoins();
-        const id = parseInt(req.params.id);
-        const index = coins.findIndex(c => c.id === id);
+        const id = req.params.id;
+        const index = coins.findIndex(c => String(c.id) === String(id));
         if (index === -1) {
             return res.status(404).json({ error: 'Coin not found' });
         }
-        coins[index] = { ...coins[index], ...req.body, id };
+        coins[index] = { ...coins[index], ...req.body, id: coins[index].id };
         await writeCoins(coins);
         res.json(coins[index]);
     } catch (error) {
@@ -172,8 +172,8 @@ app.put('/api/coins/:id', async (req, res) => {
 app.delete('/api/coins/:id', async (req, res) => {
     try {
         const coins = await readCoins();
-        const id = parseInt(req.params.id);
-        const filteredCoins = coins.filter(c => c.id !== id);
+        const id = req.params.id;
+        const filteredCoins = coins.filter(c => String(c.id) !== String(id));
         await writeCoins(filteredCoins);
         res.json({ message: 'Coin deleted successfully' });
     } catch (error) {
