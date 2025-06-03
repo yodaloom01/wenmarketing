@@ -92,6 +92,21 @@ app.get('/api/coins', async (req, res) => {
     }
 });
 
+// Get single coin by ID
+app.get('/api/coins/:id', async (req, res) => {
+    try {
+        const coins = await readCoins();
+        const id = parseInt(req.params.id);
+        const coin = coins.find(c => c.id === id);
+        if (!coin) {
+            return res.status(404).json({ error: 'Coin not found' });
+        }
+        res.json(coin);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch coin' });
+    }
+});
+
 // Add new coin
 app.post('/api/coins', async (req, res) => {
     try {
