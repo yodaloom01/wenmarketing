@@ -17,12 +17,14 @@ const card = elements.create('card');
 const clickHistory = new Map(); // Map of coinId to array of click timestamps
 
 let coins = [];
+let allCoins = []; // Store all coins
 
 // Load coins from server
 async function loadCoins() {
     try {
         const response = await fetch('http://localhost:3000/api/coins');
         coins = await response.json();
+        allCoins = [...coins]; // Store all coins
         coins.forEach(coin => initClickHistory(coin.id));
         updateCoinList();
         updateLeaderboards();
@@ -333,4 +335,21 @@ function createConfetti(x, y) {
 
         requestAnimationFrame(animate);
     }
-} 
+}
+
+// Search functionality
+const searchInput = document.getElementById('searchInput');
+
+// Add search event listener
+searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    if (searchTerm === '') {
+        coins = [...allCoins];
+    } else {
+        coins = allCoins.filter(coin => 
+            coin.name.toLowerCase().includes(searchTerm) ||
+            coin.contractAddress.toLowerCase().includes(searchTerm)
+        );
+    }
+    updateCoinList();
+}); 
