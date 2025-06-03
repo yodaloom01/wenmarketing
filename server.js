@@ -43,8 +43,27 @@ async function initCoinsFile() {
         await fs.access(COINS_FILE);
     } catch {
         await ensureDataDir();
-        await fs.writeFile(COINS_FILE, JSON.stringify([], null, 2));
-        console.log('Created new coins.json file');
+        // Initial coins data
+        const initialCoins = [
+            {
+                id: "1",
+                name: "Brick",
+                contractAddress: "0x123...",
+                isPaid: true,
+                votes: 0,
+                voteTimestamps: []
+            },
+            {
+                id: "2",
+                name: "Test Rizz",
+                contractAddress: "0x456...",
+                isPaid: true,
+                votes: 0,
+                voteTimestamps: []
+            }
+        ];
+        await fs.writeFile(COINS_FILE, JSON.stringify(initialCoins, null, 2));
+        console.log('Created new coins.json file with initial data');
     }
 }
 
@@ -53,7 +72,15 @@ async function readCoins() {
     try {
         await initCoinsFile();
         const data = await fs.readFile(COINS_FILE, 'utf8');
-        return JSON.parse(data);
+        let coins = JSON.parse(data);
+        
+        // Ensure all coins have string IDs
+        coins = coins.map(coin => ({
+            ...coin,
+            id: String(coin.id)
+        }));
+        
+        return coins;
     } catch (error) {
         console.error('Error reading coins:', error);
         return [];
@@ -63,7 +90,12 @@ async function readCoins() {
 // Write coins to file
 async function writeCoins(coins) {
     try {
-        await fs.writeFile(COINS_FILE, JSON.stringify(coins, null, 2));
+        // Ensure all coins have string IDs before writing
+        const coinsToWrite = coins.map(coin => ({
+            ...coin,
+            id: String(coin.id)
+        }));
+        await fs.writeFile(COINS_FILE, JSON.stringify(coinsToWrite, null, 2));
     } catch (error) {
         console.error('Error writing coins:', error);
         throw error;
@@ -117,12 +149,17 @@ app.get('/api/coins/:id', async (req, res) => {
 app.post('/api/coins', async (req, res) => {
     try {
         const coins = await readCoins();
+        // Generate a simple incremental ID
+        const maxId = coins.reduce((max, coin) => {
+            const coinId = parseInt(coin.id);
+            return coinId > max ? coinId : max;
+        }, 0);
+        
         const newCoin = {
             ...req.body,
-            id: Date.now(),
+            id: String(maxId + 1),
             votes: 0,
-            voteTimestamps: [],
-            isPaid: req.body.isPaid || false
+            voteTimestamps: []
         };
         coins.push(newCoin);
         await writeCoins(coins);
