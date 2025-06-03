@@ -1,31 +1,73 @@
 require('dotenv').config();
 const express = require('express');
-console.log('STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'exists' : 'missing');
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const fs = require('fs');
+const cors = require('cors');
+const fs = require('fs').promises;
 const path = require('path');
+let stripe;
+
+// Initialize Stripe only if key exists
+if (process.env.STRIPE_SECRET_KEY) {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    console.log('STRIPE_SECRET_KEY: exists');
+} else {
+    console.log('STRIPE_SECRET_KEY: missing - payment features will be disabled');
+}
+
 const app = express();
 
-const COINS_FILE = path.join(__dirname, 'coins.json');
+// Configure CORS to allow all origins temporarily
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
+
+app.use(express.json());
+app.use(express.static('.'));
+
+const COINS_FILE = path.join(__dirname, 'data', 'coins.json');
+
+// Ensure data directory exists
+async function ensureDataDir() {
+    const dataDir = path.join(__dirname, 'data');
+    try {
+        await fs.access(dataDir);
+    } catch {
+        await fs.mkdir(dataDir, { recursive: true });
+    }
+}
 
 // Initialize coins.json if it doesn't exist
-if (!fs.existsSync(COINS_FILE)) {
-    console.log('Creating new coins.json file');
-    fs.writeFileSync(COINS_FILE, JSON.stringify([], null, 2));
+async function initCoinsFile() {
+    try {
+        await fs.access(COINS_FILE);
+    } catch {
+        await ensureDataDir();
+        await fs.writeFile(COINS_FILE, JSON.stringify([], null, 2));
+        console.log('Created new coins.json file');
+    }
 }
 
 // Read coins from file
-function readCoins() {
-    console.log('Reading coins from file');
-    const data = JSON.parse(fs.readFileSync(COINS_FILE, 'utf8'));
-    console.log('Current coins data:', data);
-    return Array.isArray(data) ? data : (data.coins || []);
+async function readCoins() {
+    try {
+        await initCoinsFile();
+        const data = await fs.readFile(COINS_FILE, 'utf8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Error reading coins:', error);
+        return [];
+    }
 }
 
 // Write coins to file
-function writeCoins(coins) {
-    console.log('Writing coins to file:', coins);
-    fs.writeFileSync(COINS_FILE, JSON.stringify(coins, null, 2));
+async function writeCoins(coins) {
+    try {
+        await fs.writeFile(COINS_FILE, JSON.stringify(coins, null, 2));
+    } catch (error) {
+        console.error('Error writing coins:', error);
+        throw error;
+    }
 }
 
 // Calculate recent votes (within last minute)
@@ -34,138 +76,113 @@ function calculateRecentVotes(timestamps) {
     return timestamps.filter(time => time > oneMinuteAgo).length;
 }
 
-app.use(express.static('.'));
-app.use(express.json());
-
-// Enable CORS
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    next();
-});
-
 // Get all coins
-app.get('/api/coins', (req, res) => {
-    const coins = readCoins();
-    // Calculate recent votes for each coin
-    coins.forEach(coin => {
-        if (!coin.voteTimestamps) coin.voteTimestamps = [];
-        coin.recentVotes = calculateRecentVotes(coin.voteTimestamps);
-    });
-    res.json(coins);
+app.get('/api/coins', async (req, res) => {
+    try {
+        const coins = await readCoins();
+        // Calculate recent votes for each coin and filter out unpaid coins
+        const paidCoins = coins.filter(coin => coin.isPaid !== false);
+        paidCoins.forEach(coin => {
+            if (!coin.voteTimestamps) coin.voteTimestamps = [];
+            coin.recentVotes = calculateRecentVotes(coin.voteTimestamps);
+        });
+        res.json(paidCoins);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch coins' });
+    }
 });
 
 // Add new coin
-app.post('/api/coins', (req, res) => {
-    console.log('Attempting to add new coin:', req.body);
+app.post('/api/coins', async (req, res) => {
     try {
-        const coins = readCoins();
+        const coins = await readCoins();
         const newCoin = {
             ...req.body,
             id: Date.now(),
             votes: 0,
-            voteTimestamps: []
+            voteTimestamps: [],
+            isPaid: req.body.isPaid || false
         };
-        console.log('Created new coin object:', newCoin);
         coins.push(newCoin);
-        writeCoins(coins);
-        console.log('Successfully added coin');
+        await writeCoins(coins);
         res.json(newCoin);
     } catch (error) {
-        console.error('Error adding coin:', error);
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ error: 'Failed to add coin' });
     }
 });
 
 // Update votes
-app.put('/api/coins/:id/vote', (req, res) => {
-    const coins = readCoins();
-    const coinId = parseInt(req.params.id);
-    const coin = coins.find(c => c.id === coinId);
-    
-    if (!coin) {
-        return res.status(404).json({ error: 'Coin not found' });
+app.put('/api/coins/:id/vote', async (req, res) => {
+    try {
+        const coins = await readCoins();
+        const id = parseInt(req.params.id);
+        const coin = coins.find(c => c.id === id);
+        if (!coin) {
+            return res.status(404).json({ error: 'Coin not found' });
+        }
+        coin.votes = (coin.votes || 0) + 1;
+        coin.voteTimestamps = coin.voteTimestamps || [];
+        coin.voteTimestamps.push(Date.now());
+        await writeCoins(coins);
+        res.json(coin);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update votes' });
     }
-
-    // Initialize vote timestamps if not exists
-    if (!coin.voteTimestamps) {
-        coin.voteTimestamps = [];
-    }
-
-    // Add new vote
-    coin.votes = (coin.votes || 0) + 1;
-    coin.voteTimestamps.push(Date.now());
-
-    // Calculate recent votes
-    coin.recentVotes = calculateRecentVotes(coin.voteTimestamps);
-
-    // Clean up old timestamps (keep only last hour to prevent array from growing too large)
-    const oneHourAgo = Date.now() - (60 * 60 * 1000);
-    coin.voteTimestamps = coin.voteTimestamps.filter(time => time > oneHourAgo);
-
-    writeCoins(coins);
-    res.json(coin);
 });
 
 // Update coin
-app.put('/api/coins/:id', (req, res) => {
-    const coins = readCoins();
-    const coinId = parseInt(req.params.id);
-    const coinIndex = coins.findIndex(c => c.id === coinId);
-    
-    if (coinIndex === -1) {
-        return res.status(404).json({ error: 'Coin not found' });
+app.put('/api/coins/:id', async (req, res) => {
+    try {
+        const coins = await readCoins();
+        const id = parseInt(req.params.id);
+        const index = coins.findIndex(c => c.id === id);
+        if (index === -1) {
+            return res.status(404).json({ error: 'Coin not found' });
+        }
+        coins[index] = { ...coins[index], ...req.body, id };
+        await writeCoins(coins);
+        res.json(coins[index]);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to update coin' });
     }
-
-    coins[coinIndex] = {
-        ...coins[coinIndex],
-        ...req.body,
-        id: coinId // Preserve the original ID
-    };
-
-    writeCoins(coins);
-    res.json(coins[coinIndex]);
 });
 
 // Delete coin
-app.delete('/api/coins/:id', (req, res) => {
-    console.log('Attempting to delete coin:', req.params.id);
-    const coins = readCoins();
-    const coinId = parseInt(req.params.id);
-    const coinIndex = coins.findIndex(c => c.id === coinId);
-    
-    if (coinIndex === -1) {
-        return res.status(404).json({ error: 'Coin not found' });
+app.delete('/api/coins/:id', async (req, res) => {
+    try {
+        const coins = await readCoins();
+        const id = parseInt(req.params.id);
+        const filteredCoins = coins.filter(c => c.id !== id);
+        await writeCoins(filteredCoins);
+        res.json({ message: 'Coin deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to delete coin' });
     }
-
-    coins.splice(coinIndex, 1);
-    writeCoins(coins);
-    res.json({ message: 'Coin deleted successfully' });
 });
 
+// Create payment intent (requires Stripe)
 app.post('/create-payment-intent', async (req, res) => {
+    if (!stripe) {
+        return res.status(503).json({ error: 'Payment service unavailable - Stripe key not configured' });
+    }
     try {
-        console.log('Creating payment intent...');
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: 10000, // $100.00
+            amount: 10000, // $100 in cents
             currency: 'usd'
         });
-        console.log('Payment intent created:', paymentIntent.id);
-
-        res.send({
-            clientSecret: paymentIntent.client_secret
-        });
+        res.json({ clientSecret: paymentIntent.client_secret });
     } catch (error) {
-        console.error('Stripe error details:', {
-            message: error.message,
-            type: error.type,
-            code: error.code
-        });
-        res.status(500).send({ error: error.message });
+        res.status(500).json({ error: 'Failed to create payment intent' });
     }
 });
 
-app.listen(3000, () => {
-    console.log('Server running on port 3000');
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({ status: 'healthy' });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+    initCoinsFile().catch(console.error);
 }); 

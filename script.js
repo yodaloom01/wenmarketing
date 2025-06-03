@@ -95,6 +95,7 @@ window.addEventListener('click', (e) => {
 // Handle form submission
 addCoinForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('Form submission started');
     
     const submitButton = addCoinForm.querySelector('button[type="submit"]');
     submitButton.disabled = true;
@@ -104,10 +105,29 @@ addCoinForm.addEventListener('submit', async (e) => {
         // Get form data
         const formData = {
             name: document.getElementById('coinName').value,
-            contractAddress: document.getElementById('contractAddress').value
+            contractAddress: document.getElementById('contractAddress').value,
+            isPaid: false // Add flag to track payment status
         };
+        console.log('Form data:', formData);
 
-        // Process payment for new coin
+        // First add the coin to get an ID
+        console.log('Adding coin to server...');
+        const coinResponse = await fetch(`${API_URL}/api/coins`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        if (!coinResponse.ok) {
+            throw new Error('Failed to add coin to server');
+        }
+
+        const newCoin = await coinResponse.json();
+        console.log('Coin added, processing payment...');
+
+        // Now process payment
         console.log('Creating payment intent...');
         const response = await fetch(`${API_URL}/create-payment-intent`, {
             method: 'POST',
@@ -115,10 +135,16 @@ addCoinForm.addEventListener('submit', async (e) => {
                 'Content-Type': 'application/json'
             }
         });
+        console.log('Payment intent response:', response);
 
         const responseData = await response.json();
+        console.log('Payment intent data:', responseData);
         
         if (!response.ok) {
+            // If payment intent fails, delete the coin
+            await fetch(`${API_URL}/api/coins/${newCoin.id}`, {
+                method: 'DELETE'
+            });
             throw new Error(responseData.error || 'Failed to create payment');
         }
 
@@ -130,6 +156,10 @@ addCoinForm.addEventListener('submit', async (e) => {
         });
 
         if (error) {
+            // If payment fails, delete the coin
+            await fetch(`${API_URL}/api/coins/${newCoin.id}`, {
+                method: 'DELETE'
+            });
             throw new Error(error.message);
         }
 
@@ -151,35 +181,30 @@ Contract Address: ${formData.contractAddress}`,
                 templateParams
             );
             
-            console.log('Email sent, adding coin to server...');
-            // Add coin to server
-            const coinResponse = await fetch(`${API_URL}/api/coins`, {
-                method: 'POST',
+            console.log('Email sent, updating coin payment status...');
+            // Update coin to mark it as paid
+            await fetch(`${API_URL}/api/coins/${newCoin.id}`, {
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify({ ...formData, isPaid: true })
             });
 
-            if (!coinResponse.ok) {
-                throw new Error('Failed to add coin to server');
-            }
-
-            const newCoin = await coinResponse.json();
-            coins.push(newCoin);
-            initClickHistory(newCoin.id);
-        }
+            // Reload all coins to refresh the display
+            await loadCoins();
             
-        // Close modal and reset form
-        addCoinModal.classList.remove('active');
-        addCoinForm.reset();
-        card.unmount();
-        
-        alert('Payment successful and coin added!');
-        
-        // Update displays
-        updateCoinList();
-        updateLeaderboards();
+            // Close modal and reset form
+            addCoinModal.classList.remove('active');
+            addCoinForm.reset();
+            card.unmount();
+            
+            alert('Payment successful and coin added!');
+            
+            // Update displays
+            updateCoinList();
+            updateLeaderboards();
+        }
     } catch (error) {
         console.error('Error:', error);
         alert('Error: ' + error.message);
