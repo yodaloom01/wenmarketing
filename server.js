@@ -47,7 +47,7 @@ async function initCoinsFile() {
         const initialCoins = [
             {
                 id: "1",
-                name: "Brick",
+                name: "Popcat",
                 contractAddress: "0x123...",
                 isPaid: true,
                 votes: 0,
@@ -55,8 +55,16 @@ async function initCoinsFile() {
             },
             {
                 id: "2",
-                name: "Test Rizz",
+                name: "Fartcoin",
                 contractAddress: "0x456...",
+                isPaid: true,
+                votes: 0,
+                voteTimestamps: []
+            },
+            {
+                id: "3",
+                name: "Joe Boden",
+                contractAddress: "0x789...",
                 isPaid: true,
                 votes: 0,
                 voteTimestamps: []

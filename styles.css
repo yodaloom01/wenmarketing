@@ -33,24 +33,19 @@ h1 {
 }
 
 .primary-btn {
-    background: var(--accent);
+    background: #e74c3c;
     color: white;
     border: none;
-    padding: 0.8rem 1.5rem;
-    border-radius: 25px;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
     cursor: pointer;
-    font-size: 1rem;
-    margin-top: 1rem;
+    font-size: 1.5rem;
     transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    box-shadow: 0 4px 15px rgba(255, 62, 62, 0.3);
 }
 
 .primary-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 62, 62, 0.5);
-    background: #ff5555;
+    background: #c0392b;
+    transform: translateY(-1px);
 }
 
 .coin-grid {
