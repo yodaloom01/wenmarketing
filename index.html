@@ -24,8 +24,22 @@
             border-radius: 4px;
             margin-bottom: 20px;
         }
+        .primary-btn {
+            background: linear-gradient(45deg, #2980b9, #3498db);
+            border: 2px solid #2980b9;
+            padding: 10px 20px;
+            color: #fff;
+            text-shadow: 0 0 5px rgba(52, 152, 219, 0.7);
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.3),
+                       inset 0 0 15px rgba(52, 152, 219, 0.2);
+            transition: all 0.3s ease;
+        }
         .primary-btn:hover {
-            background: #2980b9;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            text-shadow: 0 0 8px rgba(52, 152, 219, 0.9);
+            box-shadow: 0 0 15px rgba(52, 152, 219, 0.5),
+                       inset 0 0 20px rgba(52, 152, 219, 0.3);
+            transform: translateY(-1px);
         }
         .admin-btn {
             position: fixed;
@@ -49,15 +63,32 @@
             display: flex;
             align-items: center;
             margin-right: 20px;
-            color: #1DA1F2;
-            transition: color 0.3s;
+            padding: 8px 16px;
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+            border: 2px solid #333;
+            border-radius: 5px;
+            color: #fff;
+            text-shadow: 0 0 5px rgba(29, 161, 242, 0.7);
+            box-shadow: 0 0 10px rgba(29, 161, 242, 0.2),
+                       inset 0 0 15px rgba(29, 161, 242, 0.1);
+            transition: all 0.3s ease;
         }
         .twitter-link:hover {
-            color: #0c85d0;
+            background: linear-gradient(45deg, #2d2d2d, #1a1a1a);
+            color: #1DA1F2;
+            text-shadow: 0 0 8px rgba(29, 161, 242, 0.9);
+            box-shadow: 0 0 15px rgba(29, 161, 242, 0.4),
+                       inset 0 0 20px rgba(29, 161, 242, 0.2);
+            transform: translateY(-1px);
         }
         .twitter-icon {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
         }
     </style>
 </head>
