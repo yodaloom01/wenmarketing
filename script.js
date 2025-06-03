@@ -1,3 +1,8 @@
+// Configuration
+const API_URL = window.location.hostname === 'localhost' 
+    ? 'http://localhost:3000'
+    : 'https://wenmarketing.onrender.com'; // Render backend URL
+
 // DOM Elements
 const addCoinBtn = document.getElementById('addCoinBtn');
 const addCoinModal = document.getElementById('addCoinModal');
@@ -22,7 +27,7 @@ let allCoins = []; // Store all coins
 // Load coins from server
 async function loadCoins() {
     try {
-        const response = await fetch('http://localhost:3000/api/coins');
+        const response = await fetch(`${API_URL}/api/coins`);
         coins = await response.json();
         allCoins = [...coins]; // Store all coins
         coins.forEach(coin => initClickHistory(coin.id));
@@ -104,7 +109,7 @@ addCoinForm.addEventListener('submit', async (e) => {
 
         // Process payment for new coin
         console.log('Creating payment intent...');
-        const response = await fetch('http://localhost:3000/create-payment-intent', {
+        const response = await fetch(`${API_URL}/create-payment-intent`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -148,7 +153,7 @@ Contract Address: ${formData.contractAddress}`,
             
             console.log('Email sent, adding coin to server...');
             // Add coin to server
-            const coinResponse = await fetch('http://localhost:3000/api/coins', {
+            const coinResponse = await fetch(`${API_URL}/api/coins`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -205,7 +210,7 @@ function updateCoinList() {
 // Handle voting
 async function vote(coinId) {
     try {
-        const response = await fetch(`http://localhost:3000/api/coins/${coinId}/vote`, {
+        const response = await fetch(`${API_URL}/api/coins/${coinId}/vote`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
