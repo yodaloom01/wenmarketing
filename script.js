@@ -214,22 +214,39 @@ Contract Address: ${formData.contractAddress}`,
     }
 });
 
+// Add promotional banner to body
+const promoBanner = document.createElement('div');
+promoBanner.className = 'promo-banner';
+document.body.appendChild(promoBanner);
+
 // Update coin list display
 function updateCoinList() {
-    coinList.innerHTML = coins.map(coin => `
-        <div class="coin-card">
-            <div class="coin-name">${coin.name}</div>
-            <div class="coin-address">${coin.contractAddress}</div>
-            <div class="votes-count">
-                🔥 ${coin.votes || 0} total votes
-                <br>
-                <span style="font-size: 0.9em; color: var(--accent)">
-                    (${coin.recentVotes || 0} in last minute)
-                </span>
+    coinList.innerHTML = coins.map(coin => {
+        const isLegendary = (coin.recentVotes || 0) >= 1000;
+        return `
+            <div class="coin-card ${isLegendary ? 'legendary' : ''}">
+                <div class="coin-name">${coin.name}</div>
+                <div class="coin-address">${coin.contractAddress}</div>
+                <div class="votes-count">
+                    🔥 ${coin.votes || 0} total votes
+                    <br>
+                    <span style="font-size: 0.9em; color: var(--accent)">
+                        (${coin.recentVotes || 0} in last minute)
+                    </span>
+                </div>
+                <button onclick="vote('${coin.id}')" class="vote-btn">VOTE</button>
             </div>
-            <button onclick="vote('${coin.id}')" class="vote-btn">VOTE</button>
-        </div>
-    `).join('');
+        `;
+    }).join('');
+
+    // Check for any coins with 1000+ votes/min
+    const legendaryCoins = coins.filter(coin => (coin.recentVotes || 0) >= 1000);
+    if (legendaryCoins.length > 0) {
+        promoBanner.style.display = 'block';
+        promoBanner.innerHTML = `🏆 ${legendaryCoins.map(c => c.name).join(', ')} ${legendaryCoins.length === 1 ? 'has' : 'have'} reached LEGENDARY status with 1000+ votes/min! 🏆`;
+    } else {
+        promoBanner.style.display = 'none';
+    }
 }
 
 // Handle voting

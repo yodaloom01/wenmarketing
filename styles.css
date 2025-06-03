@@ -608,4 +608,43 @@ input[type="text"]:focus {
 /* Remove sound toggle button styles */
 .sound-toggle {
     display: none;
+}
+
+/* Promotional Banner for 1000+ votes */
+.promo-banner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    color: #000;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    z-index: 10000;
+    animation: slideDown 0.5s ease-out, pulse 2s infinite;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+    display: none;
+}
+
+@keyframes slideDown {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { background: linear-gradient(45deg, #FFD700, #FFA500); }
+    50% { background: linear-gradient(45deg, #FFA500, #FFD700); }
+}
+
+.coin-card.legendary {
+    border: 3px solid #FFD700;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+    animation: legendaryPulse 2s infinite;
+}
+
+@keyframes legendaryPulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); }
+    50% { box-shadow: 0 0 50px rgba(255, 215, 0, 0.5); }
 } 
