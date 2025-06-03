@@ -561,4 +561,51 @@ input[type="text"]:focus {
 .search-bar input:focus + .search-icon {
     opacity: 1;
     transform: scale(1.1);
+}
+
+/* Casino Animations */
+@keyframes jackpotFlash {
+    0%, 100% { box-shadow: 0 0 10px #ffd700; }
+    50% { box-shadow: 0 0 30px #ffd700, 0 0 50px #ffd700; }
+}
+
+@keyframes coinFall {
+    0% {
+        transform: translateY(-20px) rotate(0deg);
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(100vh) rotate(360deg);
+        opacity: 0;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
+}
+
+.vote-btn.voting {
+    animation: shake 0.1s ease-in-out infinite, jackpotFlash 0.5s ease-in-out;
+}
+
+.coin-rain {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    width: 20px;
+    height: 20px;
+    background: #ffd700;
+    border-radius: 50%;
+    animation: coinFall 1s linear forwards;
+}
+
+.votes-count.updating {
+    animation: jackpotFlash 0.5s ease-in-out;
+}
+
+/* Remove sound toggle button styles */
+.sound-toggle {
+    display: none;
 } 

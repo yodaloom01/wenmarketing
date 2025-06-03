@@ -235,7 +235,18 @@ function updateCoinList() {
 // Handle voting
 async function vote(coinId) {
     try {
-        console.log('Voting for coin:', coinId); // Debug log
+        const btn = document.querySelector(`button[onclick="vote('${coinId}')"]`);
+        const card = btn.closest('.coin-card');
+        const votesCount = card.querySelector('.votes-count');
+        
+        // Add voting animation class
+        btn.classList.add('voting');
+        votesCount.classList.add('updating');
+
+        // Create coin rain effect
+        createCoinRain(btn);
+
+        // Original vote API call
         const response = await fetch(`${API_URL}/api/coins/${coinId}/vote`, {
             method: 'PUT',
             headers: {
@@ -244,38 +255,44 @@ async function vote(coinId) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Vote error response:', errorText); // Debug log
             throw new Error('Failed to update votes');
         }
 
         const updatedCoin = await response.json();
-        console.log('Vote response:', updatedCoin); // Debug log
         const coinIndex = coins.findIndex(c => String(c.id) === String(coinId));
         if (coinIndex !== -1) {
             coins[coinIndex] = updatedCoin;
         }
 
-        // Get the clicked button's position for the confetti effect
-        const btn = document.querySelector(`button[onclick="vote('${coinId}')"]`);
-        const rect = btn.getBoundingClientRect();
-        createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        // Remove animation classes after delay
+        setTimeout(() => {
+            btn.classList.remove('voting');
+            votesCount.classList.remove('updating');
+        }, 500);
 
-        // Add winning animation to the coin card
-        const card = btn.closest('.coin-card');
-        card.classList.add('win-animation');
-        setTimeout(() => card.classList.remove('win-animation'), 500);
-
-        // Play a satisfying sound
-        const audio = new Audio('data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAAwAAABQAVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAABSAJAaWQAAAAAAAAAAAAAAAAAAAAP/jOMAAAAAAAAAAAABJbmZvAAAADwAAAAMAAABmAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVf///////////////////////////////////////////////////////////////////////////wAAAABMYXZjNTguMTMAAAAAAAAAAAAAAAAkAAAAAAAAAAAAFIAkBpZEAAAAAAAAAAAAAAAAAAAA//uQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV');
-        audio.volume = 0.2;
-        audio.play();
-        
-        updateCoinList();
-        updateLeaderboards();
     } catch (error) {
-        console.error('Error voting:', error);
-        alert('Error updating votes: ' + error.message);
+        console.error('Vote error:', error);
+    }
+}
+
+function createCoinRain(btn) {
+    const rect = btn.getBoundingClientRect();
+    const startX = rect.left + rect.width / 2;
+    
+    // Create multiple coins
+    for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+            const coin = document.createElement('div');
+            coin.className = 'coin-rain';
+            coin.style.left = `${startX - 50 + Math.random() * 100}px`;
+            coin.style.top = `${rect.top}px`;
+            document.body.appendChild(coin);
+
+            // Remove coin after animation
+            coin.addEventListener('animationend', () => {
+                coin.remove();
+            });
+        }, i * 50);
     }
 }
 
@@ -329,47 +346,6 @@ setInterval(updateLeaderboards, 1000);
 
 // Load coins when page loads
 loadCoins();
-
-// Add confetti effect for voting
-function createConfetti(x, y) {
-    const colors = ['#00ff66', '#ffd700', '#ff3e3e'];
-    for (let i = 0; i < 30; i++) {
-        const confetti = document.createElement('div');
-        confetti.style.position = 'fixed';
-        confetti.style.left = x + 'px';
-        confetti.style.top = y + 'px';
-        confetti.style.width = '10px';
-        confetti.style.height = '10px';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.borderRadius = '50%';
-        confetti.style.pointerEvents = 'none';
-        document.body.appendChild(confetti);
-
-        const angle = Math.random() * Math.PI * 2;
-        const velocity = 5 + Math.random() * 5;
-        const vx = Math.cos(angle) * velocity;
-        const vy = Math.sin(angle) * velocity;
-
-        let posX = x;
-        let posY = y;
-
-        const animate = () => {
-            posX += vx;
-            posY += vy - 0.5; // Add gravity effect
-            confetti.style.left = posX + 'px';
-            confetti.style.top = posY + 'px';
-            confetti.style.opacity = parseFloat(confetti.style.opacity || 1) - 0.02;
-
-            if (parseFloat(confetti.style.opacity) > 0) {
-                requestAnimationFrame(animate);
-            } else {
-                confetti.remove();
-            }
-        };
-
-        requestAnimationFrame(animate);
-    }
-}
 
 // Search functionality
 const searchInput = document.getElementById('searchInput');
