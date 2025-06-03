@@ -250,6 +250,11 @@
     <a href="index.html" class="nav-btn">👈 Back to Main Site</a>
 
     <script>
+        // Configuration
+        const API_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000'
+            : 'https://wenmarketing.onrender.com';
+            
         // Set the admin password - you should change this to something secure
         const ADMIN_PASSWORD = "WenMoon2024!";
         
@@ -297,7 +302,7 @@
         // Load coins from server
         async function loadCoins() {
             try {
-                const response = await fetch('http://localhost:3000/api/coins');
+                const response = await fetch(`${API_URL}/api/coins`);
                 coins = await response.json();
                 updateCoinList();
             } catch (error) {
@@ -350,7 +355,7 @@
             try {
                 if (editingCoinId) {
                     // Update existing coin
-                    const response = await fetch(`http://localhost:3000/api/coins/${editingCoinId}`, {
+                    const response = await fetch(`${API_URL}/api/coins/${editingCoinId}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json'
@@ -367,7 +372,7 @@
                     document.querySelector('.submit-btn').textContent = 'Add Coin';
                 } else {
                     // Add new coin
-                    const response = await fetch('http://localhost:3000/api/coins', {
+                    const response = await fetch(`${API_URL}/api/coins`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
@@ -401,7 +406,7 @@
         async function deleteCoin(id) {
             if (confirm('Are you sure you want to delete this coin?')) {
                 try {
-                    const response = await fetch(`http://localhost:3000/api/coins/${id}`, {
+                    const response = await fetch(`${API_URL}/api/coins/${id}`, {
                         method: 'DELETE'
                     });
 
