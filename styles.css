@@ -64,6 +64,15 @@ h1 {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+.coin-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 .coin-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 8px 25px rgba(0, 255, 102, 0.2);
@@ -223,12 +232,6 @@ input[type="text"]:focus {
 
 .win-animation {
     animation: win 0.5s ease-out;
-}
-
-.coin-image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
 }
 
 .coin-info {

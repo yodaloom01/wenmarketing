@@ -225,6 +225,7 @@ function updateCoinList() {
         const isLegendary = (coin.recentVotes || 0) >= 500;
         return `
             <div class="coin-card ${isLegendary ? 'legendary' : ''}">
+                ${coin.image ? `<img src="${coin.image}" alt="${coin.name}" class="coin-image">` : ''}
                 <div class="coin-name">${coin.name}</div>
                 <div class="coin-address">${coin.contractAddress}</div>
                 <div class="votes-count">
