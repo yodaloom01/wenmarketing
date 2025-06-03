@@ -173,17 +173,21 @@ app.post('/api/coins', async (req, res) => {
 app.put('/api/coins/:id/vote', async (req, res) => {
     try {
         const coins = await readCoins();
-        const id = parseInt(req.params.id);
-        const coin = coins.find(c => c.id === id);
+        const id = req.params.id;
+        console.log('Voting for coin with ID:', id); // Debug log
+        const coin = coins.find(c => String(c.id) === String(id));
         if (!coin) {
+            console.log('Coin not found for voting:', id); // Debug log
             return res.status(404).json({ error: 'Coin not found' });
         }
         coin.votes = (coin.votes || 0) + 1;
         coin.voteTimestamps = coin.voteTimestamps || [];
         coin.voteTimestamps.push(Date.now());
+        console.log('Updated coin:', coin); // Debug log
         await writeCoins(coins);
         res.json(coin);
     } catch (error) {
+        console.error('Vote update error:', error); // Debug log
         res.status(500).json({ error: 'Failed to update votes' });
     }
 });
