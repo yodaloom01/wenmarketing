@@ -222,9 +222,10 @@ document.body.appendChild(promoBanner);
 // Update coin list display
 function updateCoinList() {
     coinList.innerHTML = coins.map(coin => {
-        const isLegendary = (coin.recentVotes || 0) >= 500;
+        const isUltraLegendary = (coin.recentVotes || 0) >= 1000;
+        const isLegendary = (coin.recentVotes || 0) >= 500 && !isUltraLegendary;
         return `
-            <div class="coin-card ${isLegendary ? 'legendary' : ''}">
+            <div class="coin-card ${isUltraLegendary ? 'ultra-legendary' : isLegendary ? 'legendary' : ''}">
                 ${coin.image ? `<img src="${coin.image}" alt="${coin.name}" class="coin-image">` : ''}
                 <div class="coin-name">${coin.name}</div>
                 <div class="coin-address">${coin.contractAddress}</div>
@@ -476,4 +477,21 @@ document.addEventListener('keydown', (e) => {
             location.reload(); // Refresh the page to show changes
         }
     }
-}); 
+});
+
+function checkForHighVotes() {
+    const highVoteCoins = coins.filter(coin => (coin.recentVotes || 0) >= 1000);
+    if (highVoteCoins.length > 0) {
+        const banner = document.createElement('div');
+        banner.className = 'promo-banner';
+        banner.innerHTML = `🌈 ULTRA LEGENDARY: ${highVoteCoins[0].name} HIT ${highVoteCoins[0].recentVotes}+ VOTES! 🌈`;
+        document.body.appendChild(banner);
+        banner.style.display = 'block';
+        
+        setTimeout(() => {
+            banner.style.opacity = '0';
+            banner.style.transform = 'translateY(-100%)';
+            setTimeout(() => banner.remove(), 500);
+        }, 5000);
+    }
+} 
