@@ -97,12 +97,17 @@ app.get('/api/coins/:id', async (req, res) => {
     try {
         const coins = await readCoins();
         const id = parseInt(req.params.id);
+        console.log('Fetching coin with ID:', id); // Debug log
+        console.log('Available coins:', coins); // Debug log
         const coin = coins.find(c => c.id === id);
         if (!coin) {
+            console.log('Coin not found'); // Debug log
             return res.status(404).json({ error: 'Coin not found' });
         }
+        console.log('Found coin:', coin); // Debug log
         res.json(coin);
     } catch (error) {
+        console.error('Server error:', error); // Debug log
         res.status(500).json({ error: 'Failed to fetch coin' });
     }
 });
