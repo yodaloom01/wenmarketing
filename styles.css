@@ -62,6 +62,115 @@ h1 {
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Bronze Tier (10,000+ votes) */
+.coin-card.bronze-tier {
+    background: linear-gradient(45deg, #8B4513, #CD7F32);
+    border: 2px solid #CD7F32;
+}
+
+.coin-card.bronze-tier::before {
+    content: '🥉';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+}
+
+/* Silver Tier (25,000+ votes) */
+.coin-card.silver-tier {
+    background: linear-gradient(45deg, #808080, #C0C0C0);
+    border: 2px solid #C0C0C0;
+}
+
+.coin-card.silver-tier::before {
+    content: '🥈';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+}
+
+/* Gold Tier (50,000+ votes) */
+.coin-card.gold-tier {
+    background: linear-gradient(45deg, #FFD700, #DAA520);
+    border: 2px solid #FFD700;
+}
+
+.coin-card.gold-tier::before {
+    content: '🥇';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+}
+
+/* Diamond Tier (100,000+ votes) */
+.coin-card.diamond-tier {
+    background: linear-gradient(135deg, #b8c6db 0%, #f5f7fa 50%, #b8c6db 100%);
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.coin-card.diamond-tier::before {
+    content: '💎';
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 24px;
+}
+
+.coin-card.diamond-tier::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: linear-gradient(45deg, 
+        #5e5e5e,
+        #b8c6db,
+        #ffffff,
+        #b8c6db,
+        #5e5e5e
+    );
+    z-index: -1;
+    animation: diamond-border 3s linear infinite;
+    background-size: 200% 200%;
+}
+
+@keyframes diamond-border {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Adjust text colors for better visibility on metallic backgrounds */
+.bronze-tier .coin-name,
+.silver-tier .coin-name,
+.gold-tier .coin-name,
+.diamond-tier .coin-name {
+    color: #1a1a1a;
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.bronze-tier .coin-address,
+.silver-tier .coin-address,
+.gold-tier .coin-address,
+.diamond-tier .coin-address {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* Add tier label */
+.tier-label {
+    position: absolute;
+    top: 40px;
+    right: 10px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.7);
+    text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 .coin-image {

@@ -224,35 +224,44 @@ function updateCoinList() {
     coinList.innerHTML = coins.map(coin => {
         const isUltraLegendary = (coin.recentVotes || 0) >= 1000;
         const isLegendary = (coin.recentVotes || 0) >= 500 && !isUltraLegendary;
+        
+        // Determine total votes tier
+        let totalVotesTier = '';
+        let tierLabel = '';
+        const totalVotes = coin.votes || 0;
+        
+        if (totalVotes >= 100000) {
+            totalVotesTier = 'diamond-tier';
+            tierLabel = 'DIAMOND';
+        } else if (totalVotes >= 50000) {
+            totalVotesTier = 'gold-tier';
+            tierLabel = 'GOLD';
+        } else if (totalVotes >= 25000) {
+            totalVotesTier = 'silver-tier';
+            tierLabel = 'SILVER';
+        } else if (totalVotes >= 10000) {
+            totalVotesTier = 'bronze-tier';
+            tierLabel = 'BRONZE';
+        }
+
+        const tierClass = totalVotesTier || (isUltraLegendary ? 'ultra-legendary' : isLegendary ? 'legendary' : '');
+        
         return `
-            <div class="coin-card ${isUltraLegendary ? 'ultra-legendary' : isLegendary ? 'legendary' : ''}">
+            <div class="coin-card ${tierClass}">
                 ${coin.image ? `<img src="${coin.image}" alt="${coin.name}" class="coin-image">` : ''}
                 <div class="coin-name">${coin.name}</div>
                 <div class="coin-address">${coin.contractAddress}</div>
                 <div class="votes-count">
                     🔥 ${coin.votes || 0} total votes
-                    <br>
-                    <span style="font-size: 0.9em; color: var(--accent)">
-                        (${coin.recentVotes || 0} in last minute)
-                    </span>
                 </div>
+                ${tierLabel ? `<div class="tier-label">${tierLabel}</div>` : ''}
                 <button onclick="vote('${coin.id}')" class="vote-btn">VOTE</button>
             </div>
         `;
     }).join('');
 
-    // Check for any coins with 500+ votes/min
-    const legendaryCoins = coins.filter(coin => (coin.recentVotes || 0) >= 500);
-    if (legendaryCoins.length > 0) {
-        promoBanner.style.display = 'block';
-        if (legendaryCoins.length === 1) {
-            promoBanner.innerHTML = `💥 ${legendaryCoins[0].name} COMMUNITY IS RAIDING HARD! 💥`;
-        } else {
-            promoBanner.innerHTML = `🔥 MASSIVE RAID ALERT! ${legendaryCoins.map(c => c.name).join(' & ')} COMMUNITIES ARE ON FIRE! 🔥`;
-        }
-    } else {
-        promoBanner.style.display = 'none';
-    }
+    // Check for any coins with 1000+ votes/min for ultra-legendary banner
+    checkForHighVotes();
 }
 
 // Animate number like a slot machine
