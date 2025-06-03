@@ -282,7 +282,7 @@
         // Load coins from server
         async function loadCoins() {
             try {
-                const response = await fetch(`${API_URL}/api/coins`);
+                const response = await fetch(`${API_URL}/api/coins?includeAll=true`); // Add query parameter to get all coins
                 const coins = await response.json();
                 updateCoinList(coins);
             } catch (error) {
@@ -299,6 +299,9 @@
                     <div>
                         <strong>${coin.name}</strong>
                         <div>${coin.contractAddress}</div>
+                        <div style="font-size: 0.8em; color: ${coin.isPaid === false ? '#e74c3c' : '#27ae60'}">
+                            ${coin.isPaid === false ? '⏳ Payment Pending' : '✅ Active'}
+                        </div>
                     </div>
                     <div>
                         <button onclick="editCoin(${coin.id})" class="edit-btn">Edit</button>

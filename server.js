@@ -80,13 +80,14 @@ function calculateRecentVotes(timestamps) {
 app.get('/api/coins', async (req, res) => {
     try {
         const coins = await readCoins();
-        // Calculate recent votes for each coin and filter out unpaid coins
-        const paidCoins = coins.filter(coin => coin.isPaid !== false);
-        paidCoins.forEach(coin => {
+        // If includeAll is true, return all coins, otherwise filter out unpaid ones
+        const coinsToReturn = req.query.includeAll === 'true' ? coins : coins.filter(coin => coin.isPaid !== false);
+        
+        coinsToReturn.forEach(coin => {
             if (!coin.voteTimestamps) coin.voteTimestamps = [];
             coin.recentVotes = calculateRecentVotes(coin.voteTimestamps);
         });
-        res.json(paidCoins);
+        res.json(coinsToReturn);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch coins' });
     }
