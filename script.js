@@ -243,7 +243,11 @@ function updateCoinList() {
     const legendaryCoins = coins.filter(coin => (coin.recentVotes || 0) >= 500);
     if (legendaryCoins.length > 0) {
         promoBanner.style.display = 'block';
-        promoBanner.innerHTML = `💥 ${legendaryCoins.map(c => c.name).join(', ')} COMMUNITY IS RAIDING HARD! 💥`;
+        if (legendaryCoins.length === 1) {
+            promoBanner.innerHTML = `💥 ${legendaryCoins[0].name} COMMUNITY IS RAIDING HARD! 💥`;
+        } else {
+            promoBanner.innerHTML = `🔥 MASSIVE RAID ALERT! ${legendaryCoins.map(c => c.name).join(' & ')} COMMUNITIES ARE ON FIRE! 🔥`;
+        }
     } else {
         promoBanner.style.display = 'none';
     }
