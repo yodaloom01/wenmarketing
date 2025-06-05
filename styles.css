@@ -847,4 +847,85 @@ input[type="text"]:focus {
     background: linear-gradient(45deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.08));
     border: 1px solid rgba(255, 215, 0, 0.3);
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+}
+
+.competition-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timer-container {
+    text-align: center;
+}
+
+.timer {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--money-green);
+    text-shadow: 0 0 10px var(--money-green-glow);
+    font-family: 'Rubik Mono One', monospace;
+}
+
+.timer-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-top: 0.5rem;
+}
+
+.competition-status {
+    text-align: right;
+}
+
+.status-label {
+    font-size: 0.9rem;
+    color: #888;
+    margin-bottom: 0.3rem;
+}
+
+#competitionPhase {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--money-green);
+}
+
+#competitionPhase.cooldown {
+    color: var(--accent);
+}
+
+/* Animation for timer when under 5 minutes */
+@keyframes urgentPulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.8; transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.timer.urgent {
+    animation: urgentPulse 1s infinite;
+    color: var(--accent);
+}
+
+.competition-points {
+    font-size: 0.9rem;
+    color: var(--gold);
+    margin-top: 0.3rem;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+}
+
+/* Add a special effect for coins with points */
+.leaderboard-entry:has(.competition-points) {
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+    border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.leaderboard-entry:has(.competition-points):hover {
+    background: linear-gradient(45deg, rgba(255, 215, 0, 0.15), rgba(255, 215, 0, 0.08));
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
 } 

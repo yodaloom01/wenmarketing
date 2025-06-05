@@ -24,6 +24,74 @@ const clickHistory = new Map(); // Map of coinId to array of click timestamps
 let coins = [];
 let allCoins = []; // Store all coins
 
+// Competition state
+let competitionActive = true;
+let hourlyPoints = new Map(); // Store hourly competition points
+
+// Timer and competition management
+function initializeCompetition() {
+    updateTimer();
+    setInterval(updateTimer, 1000);
+    setInterval(checkMinuteWinner, 60000); // Check winner every minute
+}
+
+function updateTimer() {
+    const now = new Date();
+    const nextHour = new Date(now);
+    nextHour.setHours(nextHour.getHours() + 1, 0, 0, 0);
+    const timeLeft = nextHour - now;
+    
+    // Check if we're in cooldown (last 5 minutes of the hour)
+    const minutes = Math.floor(timeLeft / 60000);
+    const seconds = Math.floor((timeLeft % 60000) / 1000);
+    
+    // Format the time
+    const timeString = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    // Update the timer display
+    const timerElement = document.querySelector('.timer-value');
+    const timerContainer = document.getElementById('competitionTimer');
+    const phaseElement = document.getElementById('competitionPhase');
+    
+    if (timerElement) {
+        timerElement.textContent = timeString;
+        
+        // Add urgent animation when less than 5 minutes
+        if (minutes < 5) {
+            timerContainer.classList.add('urgent');
+        } else {
+            timerContainer.classList.remove('urgent');
+        }
+        
+        // Update competition status
+        if (minutes >= 55) { // Last 5 minutes of the hour
+            competitionActive = false;
+            phaseElement.textContent = '⏸️ Cooldown';
+            phaseElement.classList.add('cooldown');
+        } else {
+            competitionActive = true;
+            phaseElement.textContent = '🔥 Active';
+            phaseElement.classList.remove('cooldown');
+        }
+    }
+}
+
+function checkMinuteWinner() {
+    if (!competitionActive) return;
+    
+    // Find the coin with the most votes in the last minute
+    const winner = [...coins]
+        .sort((a, b) => (b.recentVotes || 0) - (a.recentVotes || 0))[0];
+    
+    if (winner && winner.recentVotes > 0) {
+        // Add a point to the winning coin
+        hourlyPoints.set(winner.id, (hourlyPoints.get(winner.id) || 0) + 1);
+        
+        // Update the leaderboard to show points
+        updateLeaderboards();
+    }
+}
+
 // Load coins from server
 async function loadCoins() {
     try {
@@ -368,7 +436,10 @@ function updateLeaderboards() {
                 <span style="color: var(--gold)">#${index + 1}</span>
                 <span style="color: var(--money-green)">${coin.name}</span>
             </div>
-            <div>🔥 ${coin.recentVotes || 0} votes/min</div>
+            <div>
+                🔥 ${coin.recentVotes || 0} votes/min
+                ${hourlyPoints.has(coin.id) ? `<div class="competition-points">🏆 ${hourlyPoints.get(coin.id)} points</div>` : ''}
+            </div>
         </div>
     `).join('');
 
@@ -472,6 +543,7 @@ function checkAdminStatus() {
 // Call checkAdminStatus when page loads
 document.addEventListener('DOMContentLoaded', () => {
     checkAdminStatus();
+    initializeCompetition();
     loadCoins();
 });
 
